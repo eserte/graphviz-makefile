@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.1 2002/03/06 01:19:19 eserte Exp $
+# $Id: Makefile.pm,v 1.2 2002/03/06 01:30:28 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002 Slaven Rezic. All rights reserved.
@@ -12,6 +12,8 @@
 # Mail: slaven.rezic@berlin.de
 # WWW:  http://www.rezic.de/eserte/
 #
+
+# TODO: multiple makefiles, includes...
 
 package GraphViz::Makefile;
 use GraphViz;
@@ -46,12 +48,12 @@ sub _generate {
 	$seen{$target}++;
 	return;
     }
-    if (!$make_target->colon) {
+    my @depends = _all_depends($make_target);
+    if (!@depends) {
 	$seen{$target}++;
-	warn "No colon for target $target";
+	warn "No depends for target $target";
 	return;
     }
-    my @depends = $make_target->colon->depend;
     my $g = $self->{GraphViz};
     $g->add_node($target);
     foreach my $dep (@depends) {
@@ -62,6 +64,19 @@ sub _generate {
     foreach my $dep (@depends) {
 	$self->_generate($dep, $seen);
     }
+}
+
+sub _all_depends {
+    my($make_target) = @_;
+    my @depends;
+    if ($make_target->colon) {
+	push @depends, $make_target->colon->depend;
+    } elsif ($make_target->dcolon) {
+	foreach my $rule ($make_target->dcolon) {
+	    push @depends, $rule->depend;
+	}
+    }
+    @depends;
 }
 
 package main;
