@@ -1,8 +1,7 @@
-#!/usr/bin/perl -w
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.7 2002/03/18 14:09:27 eserte Exp $
+# $Id: Makefile.pm,v 1.8 2002/03/18 14:12:38 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002 Slaven Rezic. All rights reserved.
@@ -19,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/);
 
 $V = 1 unless defined $V;
 
