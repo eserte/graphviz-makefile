@@ -1,10 +1,10 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.10 2003/01/29 10:25:48 eserte Exp $
+# $Id: Makefile.pm,v 1.11 2003/01/31 11:27:58 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 2002 Slaven Rezic. All rights reserved.
+# Copyright (C) 2002,2003 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -18,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
@@ -231,3 +231,77 @@ package
 }
 
 1;
+
+
+__END__
+
+=head1 NAME
+
+GraphViz::Makefile - Create Makefile graphs using GraphViz
+
+=head1 SYNOPSIS
+
+    use GraphViz::Makefile;
+    my $gm = GraphViz::Makefile->new(undef, "Makefile");
+    $gm->generate("makefile-rule");
+    open(O, ">makefile.ps") or die $!;
+    binmode O;
+    print $gm->{GraphViz}->as_ps;
+    close O;
+
+=head1 DESCRIPTION
+
+=head2 METHODS
+
+=over
+
+=item new($graphviz, $makefile, $prefix)
+
+Create a C<GraphViz::Makefile> object. The first argument should be a
+C<GraphViz> object or C<undef>. In the latter case, a new C<GraphViz>
+object is created by the constructor. The second argument should be a
+C<Make> object, the filename of a Makefile, or C<undef>. In the latter
+case, the default Makefile is used. The third argument C<$prefix> is
+optional and can be used to prepend a prefix to all rule names in the
+graph output.
+
+=item generate($rule)
+
+Generate the graph, beginning at the named Makefile rule. If C<$rule>
+is not given, C<all> is used instead.
+
+=back
+
+=head2 MEMBERS
+
+The C<GraphViz::Makefile> object is hash-base with the following
+public members:
+
+=over
+
+=item GraphViz
+
+A reference to the C<GraphViz> object. This object can be used for the
+output methods.
+
+=item Make
+
+A reference to the C<Make> object.
+
+=back
+
+=head1 AUTHOR
+
+Slaven Rezic <srezic@cpan.org>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2002,2003 Slaven Rezic. All rights reserved.
+This module is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+GraphViz(3), Make(3), make(1).
+
+=cut
