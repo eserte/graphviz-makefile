@@ -1,9 +1,9 @@
 GraphViz::Makefile
 ------------------
 
-This module uses the GraphViz and Make modules to visualize makefile
-dependencies for the GraphViz package. A sample program for generating
-Tk output (tkgvizmakefile) is included.
+This module uses the GraphViz and Make modules to visualize Makefile
+dependencies. A sample program for generating Tk output
+(tkgvizmakefile) is included.
 
 INSTALLATION
 
