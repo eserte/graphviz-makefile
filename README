@@ -1,7 +1,7 @@
 GraphViz::Makefile
 ------------------
 
-This module uses the GraphViz and Make modules to create makefile
+This module uses the GraphViz and Make modules to visualize makefile
 dependencies for the GraphViz package. A sample program for generating
 Tk output (tkgvizmakefile) is included.
 
