@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.4 2002/03/07 22:31:07 eserte Exp $
+# $Id: Makefile.pm,v 1.5 2002/03/11 23:51:38 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002 Slaven Rezic. All rights reserved.
@@ -73,16 +73,35 @@ warn "$prefix$target => $prefix$dep\n";
 
 sub guess_external_makes {
     my($self, $make_rule, $cmd) = @_;
-    if ($cmd =~ /\bcd\s+(\w+)\s*;\s*make\s+(\w+)/) {
-	my($dir, $rule) = ($1, $2); # XXX parse nothing as "all"
-	warn "dir: $dir, rule: $rule\n";
-	my $f = "$dir/makefile"; # XXX make better. use $make->{GNU}
+    if ($cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
+	my($dir, $makeargs) = ($1, $2);
+	my $makefile;
+	my $rule;
+	{
+	    require Getopt::Long;
+	    local @ARGV = split /\s+/, $makeargs;
+	    $makefile = "makefile";
+	    # XXX parse more options
+	    Getopt::Long::GetOptions("f=s" => \$makefile);
+	    my @env;
+	    foreach (@ARGV) {
+		if (!defined $rule) {
+		    $rule = $_;
+		} elsif (/=/) {
+		    push @env, $_;
+		}
+	    }
+	}
+
+	warn "dir: $dir, file: $makefile, rule: $rule\n";
+	my $f = "$dir/$makefile"; # XXX make better. use $make->{GNU}
 	$f = "$dir/Makefile" if !-r $f;
 	my $gm2 = GraphViz::Makefile->new($self->{GraphViz}, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
 	$gm2->generate($rule);
 
 	$self->{GraphViz}->add_edge($make_rule->Name, "$dir/$rule");
-
+    } else {
+	warn "can't match external make command in $cmd\n";
     }
 }
 
