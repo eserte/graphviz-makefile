@@ -13,6 +13,8 @@ use GraphViz::Makefile;
 $loaded = 1;
 print "ok 1\n";
 
+if (!defined $ENV{BATCH}) { $ENV{BATCH} = 1 }
+
 if (!$ENV{BATCH}) {
     system("$^X", "-Mblib", "blib/script/tkgvizmakefile");
 }
