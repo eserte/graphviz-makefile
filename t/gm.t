@@ -14,7 +14,5 @@ $loaded = 1;
 print "ok 1\n";
 
 if (!$ENV{BATCH}) {
-    system("$^X", "-Mblib", "tkgvizmakefile");
+    system("$^X", "-Mblib", "blib/script/tkgvizmakefile");
 }
-
-
