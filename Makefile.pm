@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.8 2002/03/18 14:12:38 eserte Exp $
+# $Id: Makefile.pm,v 1.9 2002/10/18 16:09:25 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002 Slaven Rezic. All rights reserved.
@@ -18,9 +18,9 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/);
 
-$V = 1 unless defined $V;
+$V = 0 unless defined $V;
 
 sub new {
     my($pkg, $g, $make, $prefix) = @_;
@@ -103,7 +103,7 @@ sub guess_external_makes {
 
 	$self->{GraphViz}->add_edge($make_rule->Name, "$dir/$rule");
     } else {
-	warn "can't match external make command in $cmd\n";
+	warn "can't match external make command in $cmd\n" if $V;
     }
 }
 
@@ -126,10 +126,11 @@ sub _all_depends {
 }
 
 {
+local $^W = 0; # no redefine warnings
 package
     Make;
 
-sub subsvars
+*subsvars = sub
 {
  my $self = shift;
  local $_ = shift;
