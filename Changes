@@ -1,5 +1,8 @@
 Revision history for Perl extension Graphviz::Makefile.
 
+1.11
+	- now with POD
+
 0.01  Mon Mar 18 14:52:56 2002
 	- original version; created by h2xs 1.19
 
