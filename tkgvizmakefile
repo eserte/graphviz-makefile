@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: tkgvizmakefile,v 1.6 2003/02/22 09:16:34 eserte Exp $
+# $Id: tkgvizmakefile,v 1.7 2003/02/25 14:56:21 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002,2003 Slaven Rezic. All rights reserved.
@@ -16,7 +16,7 @@
 use GraphViz::Makefile;
 use strict;
 use vars qw($VERSION);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/);
 
 {
     package GraphViz;
@@ -119,14 +119,7 @@ my $gm = GraphViz::Makefile->new(undef, $file);
 $gm->generate($rule);
 
 if ($outputtype eq 'tkcanvas') {
-    require Tk;
-    my $mw = new MainWindow;
-    my $c = $mw->Scrolled("Canvas")->pack(-fill=>"both", -expand=>1);
-    $gm->{GraphViz}->as_tk_canvas($c);
-    my @c = $c->coords("rule_$rule");
-    $c->idletasks;
-    $c->center_view($c[0],$c[1]);
-    &Tk::MainLoop;
+    tkcanvas_output();
 } else {
     my $meth = "as_" . $outputtype;
     if (!defined $outputfile) {
@@ -136,6 +129,80 @@ if ($outputtype eq 'tkcanvas') {
     binmode O;
     print O $gm->{GraphViz}->$meth();
     close O;
+}
+
+sub tkcanvas_output {
+    require Tk;
+    my $mw = new MainWindow;
+    my $c;
+    $mw->configure(-menu => $mw->Menu(-menuitems => [
+        [Cascade => "~File", -menuitems => [
+	    [Button => "E~xit", -command => sub { $mw->destroy }],
+	]],
+        [Cascade => "~View", -menuitems => [
+	    [Button => "Zoom ~in", -command => sub { zoom_in($c) }],
+	    [Button => "Zoom ~out", -command => sub { zoom_out($c) }],
+        ]],
+        [Cascade => "~Help", -menuitems => [
+	    [Button => "~About", -command => sub {
+		 $mw->messageBox(
+		     -icon => "info",
+		     -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
+		     -type => "ok"
+		 );
+	     }],
+	    [Button => "tkgvizmakefile Doc", -command => sub {
+		 require Tk::Pod;
+		 $mw->Pod(-file => $0);
+	     }],
+	    [Button => "GraphViz::Makefile Doc", -command => sub {
+		 require Tk::Pod;
+		 $mw->Pod(-file => "GraphViz::Makefile");
+	     }],
+        ]],
+    ]));
+    $c = $mw->Scrolled("Canvas")->pack(-fill=>"both", -expand=>1);
+    $gm->{GraphViz}->as_tk_canvas($c);
+    my @c = $c->coords("rule_$rule");
+    $c->idletasks;
+    $c->center_view($c[0],$c[1]);
+    &Tk::MainLoop;
+}
+
+sub zoom_in {
+    my $c = shift;
+    zoom_any($c, 1.5);
+}
+
+sub zoom_out {
+    my $c = shift;
+    zoom_any($c, 1/1.5);
+}
+
+sub zoom_any {
+    my($c, $scalefactor) = @_;
+    $c->scale("all", 0, 0, $scalefactor, $scalefactor);
+    my @scrollregion = @{ $c->cget(-scrollregion) };
+    foreach (@scrollregion) { $_ *= $scalefactor }
+    $c->configure(-scrollregion => \@scrollregion);
+    my $canvas_font = $c->{OrigFont};
+    if (!$canvas_font) {
+	require Tk::Font;
+	my $text_item = ($c->find(withtag => "rule"))[0];
+	if (defined $text_item) {
+	    $canvas_font = $c->{OrigFont}
+		= $c->fontCreate("rulefont",
+				 $c->fontActual($c->itemcget($text_item, "-font")));
+	    $c->{WantFontSize} = $c->fontActual("rulefont", "-size");
+	    $c->itemconfigure("rule", -font => "rulefont");
+	}
+    }
+    my $curr_size = $c->{WantFontSize};
+    my $new_size = $curr_size * $scalefactor;
+    $c->{WantFontSize} = $new_size;
+    if ($new_size > 0 && $new_size < 6) { $new_size = 6 }
+    if ($new_size < 0 && $new_size > -6) { $new_size = -6 }
+    $c->fontConfigure("rulefont", -size => $new_size);
 }
 
 # REPO BEGIN
@@ -219,7 +286,7 @@ C<all> or first rule is used.
 
 =head1 SEE ALSO
 
-L<dot(1)>, L<GraphViz>, L<Tk>.
+L<dot(1)>, L<GraphViz>, L<GraphViz::Makefile>, L<Tk>.
 
 =cut
 
