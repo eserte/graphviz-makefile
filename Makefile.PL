@@ -6,6 +6,7 @@ WriteMakefile
   (
     'NAME'	=> 'GraphViz::Makefile',
     'VERSION_FROM' => 'Makefile.pm', # finds $VERSION
+    'EXE_FILES' => ['tkgvizmakefile'],
     'PREREQ_PM'    => {'GraphViz' => 0, 'Make' => 0},
 );
 
