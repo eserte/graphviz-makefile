@@ -4,9 +4,9 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile
   (
-    'NAME'	=> 'Graphviz::Makefile',
+    'NAME'	=> 'GraphViz::Makefile',
     'VERSION_FROM' => 'Makefile.pm', # finds $VERSION
-    'PREREQ_PM'    => {'Graphviz' => 0, 'Make' => 0},
+    'PREREQ_PM'    => {'GraphViz' => 0, 'Make' => 0},
 );
 
 sub MY::postamble {
