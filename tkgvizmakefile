@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: tkgvizmakefile,v 1.4 2003/01/29 10:26:01 eserte Exp $
+# $Id: tkgvizmakefile,v 1.5 2003/01/30 22:44:57 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002,2003 Slaven Rezic. All rights reserved.
@@ -16,7 +16,7 @@
 use GraphViz::Makefile;
 use strict;
 use vars qw($VERSION);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/);
 
 {
     package GraphViz;
@@ -202,8 +202,9 @@ Use another makefile. Default is C<Makefile>
 =item -T output
 
 Choose an output type. Every GraphViz-supported output type is
-possible and there is additionally the C<tkcanvas> type for dumping
-the graph to a Canvas widget.
+possible (see the description for the C<-T> option in the dot manpage)
+and there is additionally the C<tkcanvas> type for dumping the graph
+to a Canvas widget.
 
 =item -o outputfile
 
@@ -215,6 +216,10 @@ Start graph output from the named Makefile rule. If missing, the
 C<all> or first rule is used.
 
 =back
+
+=head1 SEE ALSO
+
+dot(1), GraphViz(3), Tk(3).
 
 =cut
 
