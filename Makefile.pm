@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.11 2003/01/31 11:27:58 eserte Exp $
+# $Id: Makefile.pm,v 1.12 2003/02/25 14:56:42 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002,2003 Slaven Rezic. All rights reserved.
@@ -18,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
@@ -302,6 +302,6 @@ it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-GraphViz(3), Make(3), make(1).
+L<GraphViz>, L<Make>, L<make(1)>, L<tkgvizmakefile>.
 
 =cut
