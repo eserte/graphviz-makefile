@@ -2,6 +2,5 @@ Changes
 MANIFEST
 Makefile.PL
 Makefile.pm
-Makefile.xs
 test.pl
 tkgvizmakefile

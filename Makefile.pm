@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.5 2002/03/11 23:51:38 eserte Exp $
+# $Id: Makefile.pm,v 1.6 2002/03/18 14:03:37 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002 Slaven Rezic. All rights reserved.
@@ -268,22 +268,23 @@ package main;
 $ENV{MAKE}="make";
 use Getopt::Long;
 my $file = "Makefile";
-GetOptions("f|file=s" => \$file) or die;
-use Tk;
-use lib "/home/e/eserte/src/bbbike/lib";
-use Tk::CanvasUtil;
-my $mw = new MainWindow;
-my $c = $mw->Scrolled("Canvas")->pack(-fill=>"both",-expand=>1);
+my $outputtype = "tkcanvas";
+GetOptions("f|file=s" => \$file,
+	   "T=s" => \$outputtype) or die;
+
 my $rule = shift || "all";
 my $gm = GraphViz::Makefile->new(undef, $file);
 $gm->generate($rule);
-#open(O, ">/tmp/bla.fig") or die $!;
-#binmode O;
-#print O
- $gm->{GraphViz}->as_tk_canvas($c);
 
-my @c = $c->coords("rule_$rule");
-$c->see($c[0],$c[1]);
+if ($outputtype eq 'tkcanvas') {
+    use Tk; # XXX no use!
+    use lib "/home/e/eserte/src/bbbike/lib";
+    use Tk::CanvasUtil;
+    my $mw = new MainWindow;
+    my $c = $mw->Scrolled("Canvas")->pack(-fill=>"both",-expand=>1);
+    $gm->{GraphViz}->as_tk_canvas($c);
+    my @c = $c->coords("rule_$rule");
+    $c->see($c[0],$c[1]);
 #  $c->bind("rule", "<1>" => sub {
 #  	     my $c = shift;
 #  	     my $file = ($c->gettags("current"))[1];
@@ -291,10 +292,14 @@ $c->see($c[0],$c[1]);
 #  		 system('emacsclient', '--no-wait', $file);
 #  	     }
 #  	 });
-
-#close O;
-
-MainLoop;
+    MainLoop;
+} else {
+    my $meth = "as_" . $outputtype;
+    open(O, ">/tmp/bla.$outputtype") or die $!;
+    binmode O;
+    print O $gm->{GraphViz}->$meth();
+    close O;
+}
 
 # REPO BEGIN
 # REPO NAME is_in_path /home/e/eserte/src/repository 
