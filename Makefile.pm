@@ -1,14 +1,14 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.9 2002/10/18 16:09:25 eserte Exp $
+# $Id: Makefile.pm,v 1.10 2003/01/29 10:25:48 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
-# Mail: slaven.rezic@berlin.de
+# Mail: slaven@rezic.de
 # WWW:  http://www.rezic.de/eserte/
 #
 
@@ -18,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
