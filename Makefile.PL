@@ -12,7 +12,7 @@ WriteMakefile
 sub MY::postamble {
     if (defined $ENV{USER} && $ENV{USER} eq 'eserte') {
 	<<'EOF';
-release :: dist
+NOT-YET-release :: dist
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 
 EOF
