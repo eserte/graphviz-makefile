@@ -2,6 +2,8 @@ Changes
 MANIFEST
 Makefile.PL
 Makefile.pm
-test.pl
+t/gm.t
+t/Make-subst
+t/Make-nosubst
 tkgvizmakefile
 README
