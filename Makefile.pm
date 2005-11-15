@@ -1,14 +1,14 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.13 2005/11/15 21:32:26 eserte Exp $
+# $Id: Makefile.pm,v 1.14 2005/11/15 21:37:14 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 2002,2003 Slaven Rezic. All rights reserved.
+# Copyright (C) 2002,2003,2005 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
-# Mail: slaven@rezic.de
+# Mail: srezic@cpan.org
 # WWW:  http://www.rezic.de/eserte/
 #
 
@@ -18,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
@@ -299,11 +299,15 @@ C<GraphViz::Makefile> object may be used instead of the methods:
 
 =over
 
-=item GraphViz
+=item * GraphViz
 
-=item Make
+=item * Make
 
 =back
+
+=head2 ALTERNATIVES
+
+There's another module doing the same thing: L<Makefile::GraphViz>.
 
 =head1 AUTHOR
 
