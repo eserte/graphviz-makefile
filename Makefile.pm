@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.12 2003/02/25 14:56:42 eserte Exp $
+# $Id: Makefile.pm,v 1.13 2005/11/15 21:32:26 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002,2003 Slaven Rezic. All rights reserved.
@@ -18,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
@@ -37,39 +37,44 @@ sub new {
     bless $self, $pkg;
 }
 
+sub GraphViz { shift->{GraphViz} }
+sub Make     { shift->{Make}     }
+
 sub generate {
     my($self, $target) = @_;
     $target = "all" if !defined $target;
     my $seen = {};
-    $self->_generate($target, $seen);
+    my $expanded_target = $self->{Make}->subsvars($target);
+    $self->_generate($target, $expanded_target, $seen);
 }
 
 sub _generate {
-    my($self, $target, $seen) = @_;
-    return if $seen->{$target};
+    my($self, $target, $expanded_target, $seen) = @_;
+    return if $seen->{$expanded_target};
+    $seen->{$expanded_target}++;
     my $make_target = $self->{Make}->Target($target);
     if (!$make_target) {
 	warn "Can't get make target for $target\n" if $V;
-	$seen->{$target}++;
 	return;
     }
     my @depends = $self->_all_depends($self->{Make}, $make_target);
     if (!@depends) {
-	$seen->{$target}++;
 	warn "No depends for target $target\n" if $V;
 	return;
     }
     my $g = $self->{GraphViz};
     my $prefix = $self->{Prefix};
-    $g->add_node("$prefix$target");
-    foreach my $dep (@depends) {
-	$g->add_node("$prefix$dep") unless $seen->{$dep};
-	$g->add_edge("$prefix$target", "$prefix$dep");
-#warn "$prefix$target => $prefix$dep\n";
+    $g->add_node($prefix.$expanded_target);
+    foreach my $dep_def (@depends) {
+	my $expanded_dep = $dep_def->{expanded};
+	$g->add_node($prefix.$expanded_dep) unless $seen->{$expanded_dep};
+	$g->add_edge($prefix.$expanded_target, $prefix.$expanded_dep);
+	warn "$prefix$expanded_target => $prefix$expanded_dep\n" if $V >= 2;
     }
     $seen->{$target}++;
-    foreach my $dep (@depends) {
-	$self->_generate($dep, $seen);
+    foreach my $dep_def (@depends) {
+	my($expanded_dep, $unexpanded_dep) = @{$dep_def}{qw(expanded unexpanded)};
+	$self->_generate($unexpanded_dep, $expanded_dep, $seen);
     }
 }
 
@@ -111,18 +116,23 @@ sub _all_depends {
     my($self, $make, $make_target) = @_;
     my @depends;
     if ($make_target->colon) {
-#	push @depends, $make_target->colon->depend;
-	push @depends, $make_target->colon->exp_depend;
+	push @depends, $make_target->colon->depend;
+#	push @depends, $make_target->colon->exp_depend;
 	$self->guess_external_makes($make_target, $make_target->colon->exp_command);
     } elsif ($make_target->dcolon) {
 	foreach my $rule ($make_target->dcolon) {
-	    #push @depends, $rule->depend;
-	    push @depends, $rule->exp_depend;
+	    push @depends, $rule->depend;
+	    #push @depends, $rule->exp_depend;
 	    $self->guess_external_makes($rule, $rule->exp_command);
 	}
     }
-#    map { split(/\s+/,$make->subsvars($_)) } @depends;
-    @depends;
+    map
+	{ +{ unexpanded => $_,
+	     expanded   => $make->subsvars($_),
+	   }
+      } @depends;
+    #    map { split(/\s+/,$make->subsvars($_)) } @depends;
+    #    @depends;
 }
 
 {
@@ -156,6 +166,7 @@ package
       {
 #XXX $@ not defined?
 #XXX       die "$var not defined in '$_'" unless (length($var) > 1); 
+warn "$var not defined in '$_'" unless (length($var) > 1); 
        $value = '';
       }
      if (defined $op)
@@ -246,7 +257,7 @@ GraphViz::Makefile - Create Makefile graphs using GraphViz
     $gm->generate("makefile-rule");
     open(O, ">makefile.ps") or die $!;
     binmode O;
-    print $gm->{GraphViz}->as_ps;
+    print $gm->GraphViz->as_ps;
     close O;
 
 =head1 DESCRIPTION
@@ -270,23 +281,27 @@ graph output.
 Generate the graph, beginning at the named Makefile rule. If C<$rule>
 is not given, C<all> is used instead.
 
+=item GraphViz
+
+Return a reference to the C<GraphViz> object. This object can be used
+for the output methods.
+
+=item Make
+
+Return a reference to the C<Make> object.
+ 
 =back
 
 =head2 MEMBERS
 
-The C<GraphViz::Makefile> object is hash-base with the following
-public members:
+For backward compatibility, the following members in the hash-based
+C<GraphViz::Makefile> object may be used instead of the methods:
 
 =over
 
 =item GraphViz
 
-A reference to the C<GraphViz> object. This object can be used for the
-output methods.
-
 =item Make
-
-A reference to the C<Make> object.
 
 =back
 
@@ -296,7 +311,7 @@ Slaven Rezic <srezic@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002,2003 Slaven Rezic. All rights reserved.
+Copyright (c) 2002,2003,2005 Slaven Rezic. All rights reserved.
 This module is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
