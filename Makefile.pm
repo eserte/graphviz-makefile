@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.14 2005/11/15 21:37:14 eserte Exp $
+# $Id: Makefile.pm,v 1.15 2005/12/08 22:48:31 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2002,2003,2005 Slaven Rezic. All rights reserved.
@@ -18,21 +18,30 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
 sub new {
-    my($pkg, $g, $make, $prefix) = @_;
+    my($pkg, $g, $make, $prefix, %args) = @_;
     $g = GraphViz->new unless $g;
     if (!$make) {
 	$make = Make->new;
     } elsif (!UNIVERSAL::isa($make, "Make")) {
 	$make = Make->new(Makefile => $make);
     }
+
+    my @allowed_args = qw(reversed);
+    my %allowed_args = map {($_,undef)} @allowed_args;
+    while(my($k,$v) = each %args) {
+	die "Unrecognized argument $k, known arguments are @allowed_args"
+	    if !exists $allowed_args{$k};
+    }
+
     my $self = { GraphViz => $g,
 		 Make     => $make,
 		 Prefix   => ($prefix||""),
+		 %args
 	       };
     bless $self, $pkg;
 }
@@ -68,8 +77,13 @@ sub _generate {
     foreach my $dep_def (@depends) {
 	my $expanded_dep = $dep_def->{expanded};
 	$g->add_node($prefix.$expanded_dep) unless $seen->{$expanded_dep};
-	$g->add_edge($prefix.$expanded_target, $prefix.$expanded_dep);
-	warn "$prefix$expanded_target => $prefix$expanded_dep\n" if $V >= 2;
+	if ($self->{reversed}) {
+	    $g->add_edge($prefix.$expanded_dep, $prefix.$expanded_target);
+	    warn "$prefix$expanded_dep => $prefix$expanded_target\n" if $V >= 2;
+	} else {
+	    $g->add_edge($prefix.$expanded_target, $prefix.$expanded_dep);
+	    warn "$prefix$expanded_target => $prefix$expanded_dep\n" if $V >= 2;
+	}
     }
     $seen->{$target}++;
     foreach my $dep_def (@depends) {
@@ -80,7 +94,7 @@ sub _generate {
 
 sub guess_external_makes {
     my($self, $make_rule, $cmd) = @_;
-    if ($cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
+    if (defined $cmd && $cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
 	my($dir, $makeargs) = ($1, $2);
 	my $makefile;
 	my $rule;
@@ -266,7 +280,7 @@ GraphViz::Makefile - Create Makefile graphs using GraphViz
 
 =over
 
-=item new($graphviz, $makefile, $prefix)
+=item new($graphviz, $makefile, $prefix, %args)
 
 Create a C<GraphViz::Makefile> object. The first argument should be a
 C<GraphViz> object or C<undef>. In the latter case, a new C<GraphViz>
@@ -275,6 +289,17 @@ C<Make> object, the filename of a Makefile, or C<undef>. In the latter
 case, the default Makefile is used. The third argument C<$prefix> is
 optional and can be used to prepend a prefix to all rule names in the
 graph output.
+
+Further arguments (specified as key-value pairs):
+
+=over
+
+=item reversed => 1
+
+Point arrows in the direction of dependencies. If not set, then the
+arrows point in the direction of "build flow".
+
+=back
 
 =item generate($rule)
 
