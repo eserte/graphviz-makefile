@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: gm.t,v 1.7 2005/11/15 21:31:29 eserte Exp $
+# $Id: gm.t,v 1.8 2005/12/08 22:50:09 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -28,7 +28,7 @@ if (!defined $ENV{BATCH}) { $ENV{BATCH} = 1 }
 
 SKIP: {
     skip("tkgvizmakefile test only with BATCH=0 mode", 1) if $ENV{BATCH};
-    system("$^X", "-Mblib", "blib/script/tkgvizmakefile");
+    system("$^X", "-Mblib", "blib/script/tkgvizmakefile", "-reversed", "-prefix", "test-");
     pass("Run tkgvizmakefile ...");
 }
 
