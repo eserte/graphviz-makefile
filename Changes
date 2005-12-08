@@ -1,5 +1,8 @@
 Revision history for Perl extension Graphviz::Makefile.
 
+1.15
+	- new option reversed (suggested by Robert Sander)
+
 1.14
 	- fixed a problem with targets with variables
 	- better tests
