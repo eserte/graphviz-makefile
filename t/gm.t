@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: gm.t,v 1.8 2005/12/08 22:50:09 eserte Exp $
+# $Id: gm.t,v 1.9 2008/07/23 18:16:57 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -22,7 +22,11 @@ BEGIN {
     }
 }
 
-BEGIN { plan tests => 10 }
+my @makefile_tests = (["$FindBin::RealBin/../Makefile", "all"],
+		      ["$FindBin::RealBin/Make-nosubst", "model"],
+		      ["$FindBin::RealBin/Make-subst", "model"],
+		     );
+plan tests => 1 + @makefile_tests * 3;
 
 if (!defined $ENV{BATCH}) { $ENV{BATCH} = 1 }
 
@@ -32,23 +36,24 @@ SKIP: {
     pass("Run tkgvizmakefile ...");
 }
 
-for my $def (["$FindBin::RealBin/../Makefile", "all"],
-	     ["$FindBin::RealBin/Make-nosubst", "model"],
-	     ["$FindBin::RealBin/Make-subst", "model"],
-	    ) {
+for my $def (@makefile_tests) {
     my($makefile, $target) = @$def;
     my $gm = GraphViz::Makefile->new(undef, $makefile);
     isa_ok($gm, "GraphViz::Makefile");
     $gm->generate($target);
 
-    my($fh, $filename) = File::Temp::tempfile(SUFFIX => ".png",
-					      UNLINK => 1);
-    print $fh $gm->GraphViz->as_png;
-    close $fh;
-
-    ok(-s $filename, "Non-empty png file for makefile $makefile");
-
+    my $png = eval { $gm->GraphViz->as_png };
  SKIP: {
+	skip("Cannot create png file: $@", 2)
+	    if !$png;
+
+	my($fh, $filename) = File::Temp::tempfile(SUFFIX => ".png",
+					      UNLINK => 1);
+	print $fh $gm->GraphViz->as_png;
+	close $fh;
+
+	ok(-s $filename, "Non-empty png file for makefile $makefile");
+
 	skip("Display png file only with BATCH=0 mode", 1) if $ENV{BATCH};
 	skip("ImageMagick/display not available", 1) if !is_in_path("display");
 
