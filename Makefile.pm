@@ -1,10 +1,10 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.15 2005/12/08 22:48:31 eserte Exp $
+# $Id: Makefile.pm,v 1.16 2008/07/23 18:16:17 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 2002,2003,2005 Slaven Rezic. All rights reserved.
+# Copyright (C) 2002,2003,2005,2008 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -18,7 +18,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/);
 
 $V = 0 unless defined $V;
 
@@ -340,7 +340,7 @@ Slaven Rezic <srezic@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002,2003,2005 Slaven Rezic. All rights reserved.
+Copyright (c) 2002,2003,2005,2008 Slaven Rezic. All rights reserved.
 This module is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
