@@ -1,10 +1,9 @@
 # -*- perl -*-
 
 #
-# $Id: Makefile.pm,v 1.16 2008/07/23 18:16:17 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 2002,2003,2005,2008 Slaven Rezic. All rights reserved.
+# Copyright (C) 2002,2003,2005,2008,2013 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -18,7 +17,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = sprintf("%d.%02d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '1.16_50';
 
 $V = 0 unless defined $V;
 
@@ -266,15 +265,28 @@ GraphViz::Makefile - Create Makefile graphs using GraphViz
 
 =head1 SYNOPSIS
 
+Output to a .png file:
+
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
-    $gm->generate("makefile-rule");
-    open(O, ">makefile.ps") or die $!;
-    binmode O;
-    print $gm->GraphViz->as_ps;
-    close O;
+    $gm->generate("all"); # or another makefile target
+    open my $ofh, ">", "makefile.png" or die $!;
+    binmode $ofh;
+    print $ofh $gm->GraphViz->as_png;
+
+Output to a .ps file:
+
+    use GraphViz::Makefile;
+    my $gm = GraphViz::Makefile->new(undef, "Makefile");
+    $gm->generate("all"); # or another makefile target
+    open my $ofh, ">", "makefile.ps" or die $!;
+    binmode $ofh;
+    print $ofh $gm->GraphViz->as_ps;
 
 =head1 DESCRIPTION
+
+B<GraphViz::Makefile> uses the L<GraphViz> and L<Make> modules to
+visualize Makefile dependencies.
 
 =head2 METHODS
 
@@ -340,7 +352,7 @@ Slaven Rezic <srezic@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002,2003,2005,2008 Slaven Rezic. All rights reserved.
+Copyright (c) 2002,2003,2005,2008,2013 Slaven Rezic. All rights reserved.
 This module is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
