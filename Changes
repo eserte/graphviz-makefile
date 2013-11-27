@@ -1,5 +1,9 @@
 Revision history for Perl extension Graphviz::Makefile.
 
+1.16_50
+	- no functional changes, just Pod and Makefile.PL/META
+	  improvements
+
 1.16
 	- no functional change, just a test improvement
 
