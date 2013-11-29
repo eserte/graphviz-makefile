@@ -17,7 +17,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = '1.16_50';
+$VERSION = '1.17';
 
 $V = 0 unless defined $V;
 
