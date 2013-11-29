@@ -34,6 +34,8 @@ sub MY::postamble {
     if ($is_devel_host) {
 	$postamble .= <<'EOF';
 
+PERL_TEST_DISTRIBUTION_OPTS=not,podcover
+
 .include "../../perl.release.mk"
 .include "../../perl.git.mk"
 
