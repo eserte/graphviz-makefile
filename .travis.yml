@@ -12,6 +12,7 @@ perl:
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq graphviz
+ - eval $(curl https://travis-perl.github.io/init) --auto
 
 branches:
  except:
