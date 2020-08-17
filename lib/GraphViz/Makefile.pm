@@ -27,7 +27,9 @@ sub new {
     if (!$make) {
 	$make = Make->new;
     } elsif (!UNIVERSAL::isa($make, "Make")) {
-	$make = Make->new(Makefile => $make);
+	my $makefile = $make;
+	$make = Make->new;
+	$make->parse($makefile);
     }
 
     my @allowed_args = qw(reversed);
@@ -51,48 +53,41 @@ sub Make     { shift->{Make}     }
 sub generate {
     my($self, $target) = @_;
     $target = "all" if !defined $target;
-    my $seen = {};
-    my $expanded_target = $self->{Make}->subsvars($target);
-    $self->_generate($target, $expanded_target, $seen);
+    $self->_generate($self->{Make}->expand($target), {});
 }
 
 sub _generate {
-    my($self, $target, $expanded_target, $seen) = @_;
-    return if $seen->{$expanded_target};
-    $seen->{$expanded_target}++;
-    my $make_target = $self->{Make}->Target($target);
-    if (!$make_target) {
+    my($self, $target, $seen) = @_;
+    return if $seen->{$target};
+    $seen->{$target}++;
+    if (!$self->{Make}->has_target($target)) {
 	warn "Can't get make target for $target\n" if $V;
 	return;
     }
-    my @depends = $self->_all_depends($self->{Make}, $make_target);
+    my $make_target = $self->{Make}->target($target);
+    my @depends = $self->_all_depends($make_target);
     if (!@depends) {
 	warn "No depends for target $target\n" if $V;
 	return;
     }
     my $g = $self->{GraphViz};
     my $prefix = $self->{Prefix};
-    $g->add_node($prefix.$expanded_target);
-    foreach my $dep_def (@depends) {
-	my $expanded_dep = $dep_def->{expanded};
-	$g->add_node($prefix.$expanded_dep) unless $seen->{$expanded_dep};
+    $g->add_node($prefix.$target);
+    foreach my $dep (@depends) {
+	$g->add_node($prefix.$dep) unless $seen->{$dep};
 	if ($self->{reversed}) {
-	    $g->add_edge($prefix.$expanded_dep, $prefix.$expanded_target);
-	    warn "$prefix$expanded_dep => $prefix$expanded_target\n" if $V >= 2;
+	    $g->add_edge($prefix.$dep, $prefix.$target);
+	    warn "$prefix$dep => $prefix$target\n" if $V >= 2;
 	} else {
-	    $g->add_edge($prefix.$expanded_target, $prefix.$expanded_dep);
-	    warn "$prefix$expanded_target => $prefix$expanded_dep\n" if $V >= 2;
+	    $g->add_edge($prefix.$target, $prefix.$dep);
+	    warn "$prefix$target => $prefix$dep\n" if $V >= 2;
 	}
     }
-    $seen->{$target}++;
-    foreach my $dep_def (@depends) {
-	my($expanded_dep, $unexpanded_dep) = @{$dep_def}{qw(expanded unexpanded)};
-	$self->_generate($unexpanded_dep, $expanded_dep, $seen);
-    }
+    $self->_generate($_, $seen) for @depends;
 }
 
 sub guess_external_makes {
-    my($self, $make_rule, $cmd) = @_;
+    my($self, $target_name, $cmd) = @_;
     if (defined $cmd && $cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
 	my($dir, $makeargs) = ($1, $2);
 	my $makefile;
@@ -119,139 +114,18 @@ sub guess_external_makes {
 	my $gm2 = GraphViz::Makefile->new($self->{GraphViz}, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
 	$gm2->generate($rule);
 
-	$self->{GraphViz}->add_edge($make_rule->Name, "$dir/$rule");
+	$self->{GraphViz}->add_edge($target_name, "$dir/$rule");
     } else {
 	warn "can't match external make command in $cmd\n" if $V;
     }
 }
 
 sub _all_depends {
-    my($self, $make, $make_target) = @_;
-    my @depends;
-    if ($make_target->colon) {
-	push @depends, $make_target->colon->depend;
-#	push @depends, $make_target->colon->exp_depend;
-	$self->guess_external_makes($make_target, $make_target->colon->exp_command);
-    } elsif ($make_target->dcolon) {
-	foreach my $rule ($make_target->dcolon) {
-	    push @depends, $rule->depend;
-	    #push @depends, $rule->exp_depend;
-	    $self->guess_external_makes($rule, $rule->exp_command);
-	}
-    }
-    map
-	{ +{ unexpanded => $_,
-	     expanded   => $make->subsvars($_),
-	   }
-      } @depends;
-    #    map { split(/\s+/,$make->subsvars($_)) } @depends;
-    #    @depends;
-}
-
-{
-local $^W = 0; # no redefine warnings
-package
-    Make;
-
-*subsvars = sub
-{
- my $self = shift;
- local $_ = shift;
- my @var = @_;
- push(@var,$self->{Override},$self->{Vars},\%ENV);
- croak("Trying to subsitute undef value") unless (defined $_); 
- while (/(?<!\$)\$\(([^()]+)\)/ || /(?<!\$)\$([<\@^?*])/)
-  {
-   my ($key,$head,$tail) = ($1,$`,$');
-   my $value;
-   if ($key =~ /^([\w._]+|\S)(?::(.*))?$/)
-    {
-     my ($var,$op) = ($1,$2);
-     foreach my $hash (@var)
-      {
-       $value = $hash->{$var};
-       if (defined $value)
-        {
-         last; 
-        }
-      }
-     unless (defined $value)
-      {
-#XXX $@ not defined?
-#XXX       die "$var not defined in '$_'" unless (length($var) > 1); 
-warn "$var not defined in '$_'" unless (length($var) > 1); 
-       $value = '';
-      }
-     if (defined $op)
-      {
-       if ($op =~ /^s(.).*\1.*\1/)
-        {
-         local $_ = $self->subsvars($value);
-         $op =~ s/\\/\\\\/g;
-         eval $op.'g';
-         $value = $_;
-        }
-       else
-        {
-         die "$var:$op = '$value'\n"; 
-        }   
-      }
-    }
-   elsif ($key =~ /wildcard\s*(.*)$/)
-    {
-     $value = join(' ',glob($self->pathname($1)));
-    }
-   elsif ($key =~ /shell\s*(.*)$/)
-    {
-     $value = join(' ',split('\n',`$1`));
-    }
-   elsif ($key =~ /addprefix\s*([^,]*),(.*)$/)
-    {
-     $value = join(' ',map($1 . $_,split('\s+',$2)));
-    }
-   elsif ($key =~ /notdir\s*(.*)$/)
-    {
-     my @files = split(/\s+/,$1);
-     foreach (@files)
-      {
-       s#^.*/([^/]*)$#$1#;
-      }
-     $value = join(' ',@files);
-    }
-   elsif ($key =~ /dir\s*(.*)$/)
-    {
-     my @files = split(/\s+/,$1);
-     foreach (@files)
-      {
-       s#^(.*)/[^/]*$#$1#;
-      }
-     $value = join(' ',@files);
-    }
-   elsif ($key =~ /^subst\s+([^,]*),([^,]*),(.*)$/)
-    {
-     my ($a,$b) = ($1,$2);
-     $value = $3;
-     $a =~ s/\./\\./;
-     $value =~ s/$a/$b/; 
-    }
-   elsif ($key =~ /^mktmp,(\S+)\s*(.*)$/)
-    {
-     my ($file,$content) = ($1,$2);
-     open(TMP,">$file") || die "Cannot open $file:$!";
-     $content =~ s/\\n//g;
-     print TMP $content;
-     close(TMP);
-     $value = $file;
-    }
-   else
-    {
-     warn "Cannot evaluate '$key' in '$_'\n";
-    }
-   $_ = "$head$value$tail";
-  }
- s/\$\$/\$/g;
- return $_;
-}
+    my($self, $make_target) = @_;
+    my @rules = @{ $make_target->rules };
+    $self->guess_external_makes($make_target->Name, $_)
+	for map @{ $_->exp_recipe($make_target) }, @rules;
+    map @{ $_->prereqs }, @rules;
 }
 
 1;
