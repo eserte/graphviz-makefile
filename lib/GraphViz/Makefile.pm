@@ -3,7 +3,7 @@
 #
 # Author: Slaven Rezic
 #
-# Copyright (C) 2002,2003,2005,2008,2013 Slaven Rezic. All rights reserved.
+# Copyright (C) 2002,2003,2005,2008,2013,2020 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -17,7 +17,7 @@ use Make;
 use strict;
 
 use vars qw($VERSION $V);
-$VERSION = '1.17_50';
+$VERSION = '1.17_51';
 
 $V = 0 unless defined $V;
 
