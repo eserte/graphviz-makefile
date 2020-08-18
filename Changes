@@ -1,5 +1,8 @@
 Revision history for Perl extension Graphviz::Makefile.
 
+1.17_50
+	- update to use Make 2.002 (by Ed J)
+
 1.17
 	- stable release with changes in 1.16_50
 
