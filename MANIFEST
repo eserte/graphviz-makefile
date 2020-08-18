@@ -2,7 +2,7 @@ Changes
 MANIFEST
 MANIFEST.SKIP
 Makefile.PL
-Makefile.pm
+lib/GraphViz/Makefile.pm
 t/gm.t
 t/Make-subst
 t/Make-nosubst
