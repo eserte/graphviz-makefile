@@ -143,7 +143,7 @@ sub generate_gm {
 sub tkcanvas_output {
     my ($rule, $gm, $prefix, $gm_args) = @_;
     require Tk;
-    my $mw = new MainWindow;
+    my $mw = MainWindow->new;
     my $c;
     $mw->configure(-menu => $mw->Menu(-menuitems => [
         [Cascade => "~File", -menuitems => [
