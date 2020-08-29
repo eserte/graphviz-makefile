@@ -14,11 +14,10 @@ EOF
     };
 }
 
-WriteMakefile
-  (
+WriteMakefile(
     NAME		=> 'GraphViz::Makefile',
     VERSION_FROM	=> 'lib/GraphViz/Makefile.pm', # finds $VERSION
-    EXE_FILES		=> ['tkgvizmakefile'],
+    EXE_FILES		=> [ glob 'scripts/*' ],
     PREREQ_PM		=> {'GraphViz' => 0, 'Make' => '2.002'},
     LICENSE	      => 'perl',
     MIN_PERL_VERSION => '5.005',
