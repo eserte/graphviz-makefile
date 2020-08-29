@@ -133,7 +133,7 @@ if ($outputtype eq 'tkcanvas') {
     }
     open(O, ">$outputfile") or die "Can't write to $outputfile: $!";
     binmode O;
-    print O $gm->{GraphViz}->$meth();
+    print O $gm->GraphViz->$meth();
     close O;
 }
 
@@ -206,9 +206,9 @@ sub draw_graph {
     my($w) = @_;
     my $c = $w->Subwidget("Graph");
     if ($tkcanvastype eq 'tkgraphviz') {
-	$c->show($gm->{GraphViz});
+	$c->show($gm->GraphViz);
     } else {
-	$gm->{GraphViz}->as_tk_canvas($c);
+	$gm->GraphViz->as_tk_canvas($c);
     }
     my @c = $c->coords("rule_$rule");
     $c->idletasks;

@@ -209,19 +209,6 @@ Return a reference to the C<Make> object.
  
 =back
 
-=head2 MEMBERS
-
-For backward compatibility, the following members in the hash-based
-C<GraphViz::Makefile> object may be used instead of the methods:
-
-=over
-
-=item * GraphViz
-
-=item * Make
-
-=back
-
 =head2 ALTERNATIVES
 
 There's another module doing the same thing: L<Makefile::GraphViz>.

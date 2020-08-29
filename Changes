@@ -1,4 +1,5 @@
 - cruelly drop support for pre-5.005
+- remove obsolete internal structure docs
 
 1.18
 	- stable release with changes in 1.17_50 .. 1.17_51
