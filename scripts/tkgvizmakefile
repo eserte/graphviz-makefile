@@ -121,11 +121,10 @@ if (!GetOptions("f|file=s" => \$file,
     Pod::Usage::pod2usage(1);
 }
 my $rule = shift || "all";
-my $gm;
-generate_gm($file, $prefix, reversed => $reversed);
+my $gm = generate_gm($file, $rule, $prefix, reversed => $reversed);
 
 if ($outputtype eq 'tkcanvas') {
-    tkcanvas_output();
+    tkcanvas_output($rule, $gm);
 } else {
     my $meth = "as_" . $outputtype;
     if (!defined $outputfile) {
@@ -137,18 +136,20 @@ if ($outputtype eq 'tkcanvas') {
 }
 
 sub generate_gm {
-    my($file, $prefix, %args) = @_;
-    $gm = GraphViz::Makefile->new(undef, $file, $prefix, %args);
+    my($file, $rule, $prefix, %args) = @_;
+    my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %args);
     $gm->generate($rule);
+    $gm;
 }
 
 sub tkcanvas_output {
+    my ($rule, $gm) = @_;
     require Tk;
     my $mw = new MainWindow;
     my $c;
     $mw->configure(-menu => $mw->Menu(-menuitems => [
         [Cascade => "~File", -menuitems => [
-	    [Button => "~Open", -command => sub { choose_new_file($mw) }],
+	    [Button => "~Open", -command => sub { choose_new_file($mw, $rule) }],
 	    [Button => "E~xit", -command => sub { $mw->destroy }],
 	]],
         [Cascade => "~View", -menuitems => [
@@ -197,12 +198,12 @@ sub tkcanvas_output {
     }
     $c->pack(-fill=>"both", -expand=>1);
     $mw->Advertise(Graph => $c);
-    draw_graph($mw);
+    draw_graph($mw, $rule, $gm);
     &Tk::MainLoop;
 }
 
 sub draw_graph {
-    my($w) = @_;
+    my($w, $rule, $gm) = @_;
     my $c = $w->Subwidget("Graph");
     if ($tkcanvastype eq 'tkgraphviz') {
 	$c->show($gm->GraphViz);
@@ -251,11 +252,11 @@ sub zoom_any {
 }
 
 sub choose_new_file {
-    my($w) = @_;
+    my($w, $rule) = @_;
     my $new_file = $w->getOpenFile;
     if (defined $new_file) {
-	generate_gm($new_file);
-	draw_graph($w);
+	my $gm = generate_gm($new_file, $rule);
+	draw_graph($w, $rule, $gm);
     }
 }
 
