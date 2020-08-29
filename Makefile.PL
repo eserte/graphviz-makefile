@@ -21,9 +21,9 @@ WriteMakefile
     EXE_FILES		=> ['tkgvizmakefile'],
     PREREQ_PM		=> {'GraphViz' => 0, 'Make' => '2.002'},
     LICENSE	      => 'perl',
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
-       AUTHOR         => 'Slaven Rezic <srezic@cpan.org>') : ()),
+    MIN_PERL_VERSION => '5.005',
+    ABSTRACT_FROM  => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
+    AUTHOR         => 'Slaven Rezic <srezic@cpan.org>',
     ($eumm_recent_enough ?
       (META_ADD => { resources => { repository => 'git://github.com/eserte/graphviz-makefile.git' } }) : ()),
 );

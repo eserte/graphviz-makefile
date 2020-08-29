@@ -1,4 +1,4 @@
-Revision history for Perl extension Graphviz::Makefile.
+- cruelly drop support for pre-5.005
 
 1.18
 	- stable release with changes in 1.17_50 .. 1.17_51
