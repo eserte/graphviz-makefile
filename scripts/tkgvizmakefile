@@ -119,10 +119,10 @@ if (!GetOptions("f|file=s" => \$file,
 }
 my $rule = shift || "all";
 my $gm_args = { reversed => $reversed };
-my $gm = generate_gm($file, $rule, $prefix, $gm_args);
+my $graphviz = generate_graphviz($file, $rule, $prefix, $gm_args);
 
 if ($outputtype eq 'tkcanvas') {
-    tkcanvas_output($rule, $gm, $prefix, $gm_args);
+    tkcanvas_output($rule, $graphviz, $prefix, $gm_args);
 } else {
     my $meth = "as_" . $outputtype;
     if (!defined $outputfile) {
@@ -130,18 +130,18 @@ if ($outputtype eq 'tkcanvas') {
     }
     open my $fh, ">", $outputfile or die "Can't write to $outputfile: $!";
     binmode $fh;
-    print $fh $gm->GraphViz->$meth();
+    print $fh $graphviz->$meth();
 }
 
-sub generate_gm {
+sub generate_graphviz {
     my($file, $rule, $prefix, $gm_args) = @_;
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
     $gm->generate($rule);
-    $gm;
+    $gm->GraphViz;
 }
 
 sub tkcanvas_output {
-    my ($rule, $gm, $prefix, $gm_args) = @_;
+    my ($rule, $graphviz, $prefix, $gm_args) = @_;
     require Tk;
     my $mw = MainWindow->new;
     my $c;
@@ -196,17 +196,17 @@ sub tkcanvas_output {
     }
     $c->pack(-fill=>"both", -expand=>1);
     $mw->Advertise(Graph => $c);
-    draw_graph($mw, $rule, $gm);
+    draw_graph($mw, $rule, $graphviz);
     &Tk::MainLoop;
 }
 
 sub draw_graph {
-    my($w, $rule, $gm) = @_;
+    my($w, $rule, $graphviz) = @_;
     my $c = $w->Subwidget("Graph");
     if ($tkcanvastype eq 'tkgraphviz') {
-	$c->show($gm->GraphViz);
+	$c->show($graphviz);
     } else {
-	$gm->GraphViz->as_tk_canvas($c);
+	$graphviz->as_tk_canvas($c);
     }
     my @c = $c->coords("rule_$rule");
     $c->idletasks;
@@ -253,8 +253,8 @@ sub choose_new_file {
     my($w, $rule, $prefix, $gm_args) = @_;
     my $new_file = $w->getOpenFile;
     if (defined $new_file) {
-	my $gm = generate_gm($new_file, $rule, $prefix, $gm_args);
-	draw_graph($w, $rule, $gm);
+	my $graphviz = generate_graphviz($new_file, $rule, $prefix, $gm_args);
+	draw_graph($w, $rule, $graphviz);
     }
 }
 
