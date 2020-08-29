@@ -1,10 +1,7 @@
 #!/usr/bin/perl -w
 # -*- perl -*-
 
-#
-# $Id: gm.t,v 1.9 2008/07/23 18:16:57 eserte Exp $
 # Author: Slaven Rezic
-#
 
 use strict;
 use FindBin;
