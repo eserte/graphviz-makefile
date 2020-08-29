@@ -1,5 +1,6 @@
 - cruelly drop support for 5.005 because three-arg open
 - remove obsolete internal structure docs
+- add generate_calls method
 
 1.18
 	- stable release with changes in 1.17_50 .. 1.17_51

@@ -53,16 +53,16 @@ sub generate {
     my ($self, $target) = @_;
     $target = "all" if !defined $target;
     my $g = $self->{GraphViz};
-    for my $call ($self->_generate($self->{Make}->expand($target), {})) {
+    for my $call ($self->generate_calls($self->{Make}->expand($target))) {
         my ($method, @args) = @$call;
         $g->$method(@args);
     }
 }
 
-sub _generate {
+sub generate_calls {
     my ($self, $target, $seen) = @_;
-    return if $seen->{$target};
-    $seen->{$target}++;
+    $seen ||= {};
+    return if $seen->{$target}++;
     if (!$self->{Make}->has_target($target)) {
         warn "Can't get make target for $target\n" if $V;
         return;
@@ -82,7 +82,7 @@ sub _generate {
         push @calls, [ 'add_edge', @edge ];
         warn "$edge[0] => $edge[1]\n" if $V >= 2;
     }
-    (@calls, map $self->_generate($_, $seen), @depends);
+    (@calls, map $self->generate_calls($_, $seen), @depends);
 }
 
 sub find_recursive_makes {
@@ -196,6 +196,15 @@ is not given, C<all> is used instead.
 Search the command for a recursive make (change directory, call
 make). Incorporates into this graph with the subdirectory's target as
 C<dirname/targetname>.
+
+=item generate_calls($target)
+
+    for my $call ($gm->generate_calls($target)) {
+        my ($method, @args) = @$call;
+        $g->$method(@args);
+    }
+
+Return a list of array-refs of form C<[ $graphviz_method, @args ]>.
 
 =item GraphViz
 
