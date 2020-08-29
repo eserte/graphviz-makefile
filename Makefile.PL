@@ -20,7 +20,7 @@ WriteMakefile(
     EXE_FILES		=> [ glob 'scripts/*' ],
     PREREQ_PM		=> {'GraphViz' => 0, 'Make' => '2.002'},
     LICENSE	      => 'perl',
-    MIN_PERL_VERSION => '5.005',
+    MIN_PERL_VERSION => '5.006', # three-arg open
     ABSTRACT_FROM  => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
     AUTHOR         => 'Slaven Rezic <srezic@cpan.org>',
     ($eumm_recent_enough ?

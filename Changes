@@ -1,4 +1,4 @@
-- cruelly drop support for pre-5.005
+- cruelly drop support for 5.005 because three-arg open
 - remove obsolete internal structure docs
 
 1.18

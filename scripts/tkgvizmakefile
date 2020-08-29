@@ -131,10 +131,9 @@ if ($outputtype eq 'tkcanvas') {
     if (!defined $outputfile) {
 	die "-o is missing";
     }
-    open(O, ">$outputfile") or die "Can't write to $outputfile: $!";
-    binmode O;
-    print O $gm->GraphViz->$meth();
-    close O;
+    open my $fh, ">", $outputfile or die "Can't write to $outputfile: $!";
+    binmode $fh;
+    print $fh $gm->GraphViz->$meth();
 }
 
 sub generate_gm {
