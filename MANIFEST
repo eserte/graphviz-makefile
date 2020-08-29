@@ -1,10 +1,10 @@
 Changes
+lib/GraphViz/Makefile.pm
+Makefile.PL
 MANIFEST
 MANIFEST.SKIP
-Makefile.PL
-lib/GraphViz/Makefile.pm
-t/gm.t
-t/Make-subst
-t/Make-nosubst
-tkgvizmakefile
 README
+t/gm.t
+t/Make-nosubst
+t/Make-subst
+tkgvizmakefile
