@@ -86,7 +86,7 @@ sub _generate {
     $self->_generate($_, $seen) for @depends;
 }
 
-sub guess_external_makes {
+sub find_recursive_makes {
     my($self, $target_name, $cmd) = @_;
     if (defined $cmd && $cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
 	my($dir, $makeargs) = ($1, $2);
@@ -123,7 +123,7 @@ sub guess_external_makes {
 sub _all_depends {
     my($self, $make_target) = @_;
     my @rules = @{ $make_target->rules };
-    $self->guess_external_makes($make_target->Name, $_)
+    $self->find_recursive_makes($make_target->Name, $_)
 	for map @{ $_->exp_recipe($make_target) }, @rules;
     map @{ $_->prereqs }, @rules;
 }
@@ -191,6 +191,12 @@ arrows point in the direction of "build flow".
 
 Generate the graph, beginning at the named Makefile rule. If C<$rule>
 is not given, C<all> is used instead.
+
+=item find_recursive_makes($target_name, $cmd)
+
+Search the command for a recursive make (change directory, call
+make). Incorporates into this graph with the subdirectory's target as
+C<dirname/targetname>.
 
 =item GraphViz
 
