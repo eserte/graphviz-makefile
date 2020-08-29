@@ -1,12 +1,15 @@
 language: perl
-perl:
-  - "5.30"
-  - "5.26"
-  - "5.22"
-  - "5.16"
-  - "5.14"
-  - "5.10"
-  - "5.8"
+
+jobs:
+  include:
+    - perl: "5.30"
+      env: RELEASE_TESTING=1
+    - perl: "5.26"
+    - perl: "5.22"
+    - perl: "5.16"
+    - perl: "5.14"
+    - perl: "5.10"
+    - perl: "5.8"
 
 before_install:
  - sudo apt-get update -qq

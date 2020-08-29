@@ -8,3 +8,6 @@ t/gm.t
 t/Make-nosubst
 t/Make-subst
 tkgvizmakefile
+xt/manifest.t
+xt/pod-coverage.t
+xt/pod.t
