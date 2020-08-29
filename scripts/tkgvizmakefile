@@ -196,19 +196,19 @@ sub tkcanvas_output {
     }
     $c->pack(-fill=>"both", -expand=>1);
     $mw->Advertise(Graph => $c);
-    draw_graph($mw, $rule, $graphviz);
+    draw_graph($mw, $rule, $prefix, $graphviz);
     &Tk::MainLoop;
 }
 
 sub draw_graph {
-    my($w, $rule, $graphviz) = @_;
+    my($w, $rule, $prefix, $graphviz) = @_;
     my $c = $w->Subwidget("Graph");
     if ($tkcanvastype eq 'tkgraphviz') {
 	$c->show($graphviz);
     } else {
 	$graphviz->as_tk_canvas($c);
     }
-    my @c = $c->coords("rule_$rule");
+    my @c = $c->coords("rule_$prefix$rule");
     $c->idletasks;
     $c->center_view($c[0],$c[1]);
 }
@@ -254,7 +254,7 @@ sub choose_new_file {
     my $new_file = $w->getOpenFile;
     if (defined $new_file) {
 	my $graphviz = generate_graphviz($new_file, $rule, $prefix, $gm_args);
-	draw_graph($w, $rule, $graphviz);
+	draw_graph($w, $rule, $prefix, $graphviz);
     }
 }
 
@@ -310,7 +310,7 @@ tkgvizmakefile - create Tk graphs from Makefiles
 =head1 SYNOPSIS
 
     tkgvizmakefile [-f makefile] [-T output] [-o outputfile]
-                   [-reversed] [-prefix prefix] [-tkcanvatype type][rule]
+                   [-reversed] [-prefix prefix] [-tkcanvatype type] [rule]
 
 =head1 OPTIONS
 
