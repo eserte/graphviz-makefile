@@ -60,3 +60,4 @@
 
 ^\.travis\.yml$
 ^GraphViz-Makefile-.*\.tar\.gz$
+\.swp$
