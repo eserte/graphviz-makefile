@@ -25,7 +25,6 @@ my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
 
 sub new {
     my ($pkg, $g, $make, $prefix, %args) = @_;
-    $g = GraphViz->new unless $g;
     if (!$make) {
         $make = Make->new;
     } elsif (!UNIVERSAL::isa($make, "Make")) {
@@ -46,13 +45,13 @@ sub new {
     bless $self, $pkg;
 }
 
-sub GraphViz { shift->{GraphViz} }
+sub GraphViz { shift->{GraphViz} ||= GraphViz->new }
 sub Make     { shift->{Make}     }
 
 sub generate {
     my ($self, $target) = @_;
     $target = "all" if !defined $target;
-    my $g = $self->{GraphViz};
+    my $g = $self->GraphViz;
     for my $call ($self->generate_calls($self->{Make}->expand($target))) {
         my ($method, @args) = @$call;
         $g->$method(@args);
@@ -106,14 +105,12 @@ sub find_recursive_makes {
                 }
             }
         }
-
-#	warn "dir: $dir, file: $makefile, rule: $rule\n";
+#        warn "dir: $dir, file: $makefile, rule: $rule\n";
         my $f = "$dir/$makefile"; # XXX make better. use $make->{GNU}
         $f = "$dir/Makefile" if !-r $f;
-        my $gm2 = GraphViz::Makefile->new($self->{GraphViz}, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
+        my $gm2 = GraphViz::Makefile->new($self->GraphViz, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
         $gm2->generate($rule);
-
-        $self->{GraphViz}->add_edge($target_name, "$dir/$rule");
+        $self->GraphViz->add_edge($target_name, "$dir/$rule");
     } else {
         warn "can't match external make command in $cmd\n" if $V;
     }
@@ -142,19 +139,22 @@ Output to a .png file:
 
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
-    $gm->generate("all"); # or another makefile target
-    open my $ofh, ">", "makefile.png" or die $!;
-    binmode $ofh;
-    print $ofh $gm->GraphViz->as_png;
+    my $g = GraphViz->new;
+    for my $call ($gm->generate_calls("all")) { # or another makefile target
+        my ($method, @args) = @$call;
+        $g->$method(@args);
+    }
+    $g->as_png("makefile.png");
 
-Output to a .ps file:
+To output to a .ps file, just replace C<png> with C<ps> in the filename
+and method above.
+
+Or, using the deprecated mutation style:
 
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     $gm->generate("all"); # or another makefile target
-    open my $ofh, ">", "makefile.ps" or die $!;
-    binmode $ofh;
-    print $ofh $gm->GraphViz->as_ps;
+    $gm->GraphViz->as_png("makefile.png");
 
 =head1 DESCRIPTION
 
@@ -175,6 +175,8 @@ case, the default Makefile is used. The third argument C<$prefix> is
 optional and can be used to prepend a prefix to all rule names in the
 graph output.
 
+The created nodes are named C<rule_$prefix$name>.
+
 Further arguments (specified as key-value pairs):
 
 =over
@@ -189,7 +191,8 @@ arrows point in the direction of "build flow".
 =item generate($rule)
 
 Generate the graph, beginning at the named Makefile rule. If C<$rule>
-is not given, C<all> is used instead.
+is not given, C<all> is used instead. Mutates the internal C<GraphViz>
+object.
 
 =item find_recursive_makes($target_name, $cmd)
 
@@ -208,8 +211,10 @@ Return a list of array-refs of form C<[ $graphviz_method, @args ]>.
 
 =item GraphViz
 
-Return a reference to the C<GraphViz> object. This object can be used
-for the output methods.
+Return a reference to the C<GraphViz> object. This object will be used
+for the output methods. Will only be created if used. It is recommended
+to instead use the C<generate_calls> method and make the calls on an
+externally-controlled L<GraphViz> object.
 
 =item Make
 

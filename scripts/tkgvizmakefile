@@ -136,8 +136,12 @@ if ($outputtype eq 'tkcanvas') {
 sub generate_graphviz {
     my($file, $rule, $prefix, $gm_args) = @_;
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
-    $gm->generate($rule);
-    $gm->GraphViz;
+    my $g = GraphViz->new;
+    for my $call ($gm->generate_calls($rule)) {
+        my ($method, @args) = @$call;
+        $g->$method(@args);
+    }
+    $g;
 }
 
 sub tkcanvas_output {
