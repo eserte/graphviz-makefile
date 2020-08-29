@@ -24,14 +24,14 @@ my @ALLOWED_ARGS = qw(reversed);
 my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
 
 sub new {
-    my($pkg, $g, $make, $prefix, %args) = @_;
+    my ($pkg, $g, $make, $prefix, %args) = @_;
     $g = GraphViz->new unless $g;
     if (!$make) {
-	$make = Make->new;
+        $make = Make->new;
     } elsif (!UNIVERSAL::isa($make, "Make")) {
-	my $makefile = $make;
-	$make = Make->new;
-	$make->parse($makefile);
+        my $makefile = $make;
+        $make = Make->new;
+        $make->parse($makefile);
     }
 
     my @illegal_args = grep !exists $ALLOWED_ARGS{$_}, keys %args;
@@ -39,10 +39,10 @@ sub new {
         if @illegal_args;
 
     my $self = { GraphViz => $g,
-		 Make     => $make,
-		 Prefix   => ($prefix||""),
-		 %args
-	       };
+                 Make     => $make,
+                 Prefix   => ($prefix||""),
+                 %args
+               };
     bless $self, $pkg;
 }
 
@@ -50,80 +50,80 @@ sub GraphViz { shift->{GraphViz} }
 sub Make     { shift->{Make}     }
 
 sub generate {
-    my($self, $target) = @_;
+    my ($self, $target) = @_;
     $target = "all" if !defined $target;
-    $self->_generate($self->{Make}->expand($target), {});
+    my $g = $self->{GraphViz};
+    for my $call ($self->_generate($self->{Make}->expand($target), {})) {
+        my ($method, @args) = @$call;
+        $g->$method(@args);
+    }
 }
 
 sub _generate {
-    my($self, $target, $seen) = @_;
+    my ($self, $target, $seen) = @_;
     return if $seen->{$target};
     $seen->{$target}++;
     if (!$self->{Make}->has_target($target)) {
-	warn "Can't get make target for $target\n" if $V;
-	return;
+        warn "Can't get make target for $target\n" if $V;
+        return;
     }
     my $make_target = $self->{Make}->target($target);
     my @depends = $self->_all_depends($make_target);
     if (!@depends) {
-	warn "No depends for target $target\n" if $V;
-	return;
+        warn "No depends for target $target\n" if $V;
+        return;
     }
-    my $g = $self->{GraphViz};
     my $prefix = $self->{Prefix};
-    $g->add_node($prefix.$target);
+    my @calls = ([ 'add_node', $prefix.$target ]);
     foreach my $dep (@depends) {
-	$g->add_node($prefix.$dep) unless $seen->{$dep};
-	if ($self->{reversed}) {
-	    $g->add_edge($prefix.$dep, $prefix.$target);
-	    warn "$prefix$dep => $prefix$target\n" if $V >= 2;
-	} else {
-	    $g->add_edge($prefix.$target, $prefix.$dep);
-	    warn "$prefix$target => $prefix$dep\n" if $V >= 2;
-	}
+        push @calls, [ 'add_node', $prefix.$dep ] unless $seen->{$dep};
+        my @edge = ($prefix.$target, $prefix.$dep);
+        @edge = reverse @edge if $self->{reversed};
+        push @calls, [ 'add_edge', @edge ];
+        warn "$edge[0] => $edge[1]\n" if $V >= 2;
     }
-    $self->_generate($_, $seen) for @depends;
+    (@calls, map $self->_generate($_, $seen), @depends);
 }
 
 sub find_recursive_makes {
-    my($self, $target_name, $cmd) = @_;
+    my ($self, $target_name, $cmd) = @_;
     if (defined $cmd && $cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
-	my($dir, $makeargs) = ($1, $2);
-	my $makefile;
-	my $rule;
-	{
-	    require Getopt::Long;
-	    local @ARGV = split /\s+/, $makeargs;
-	    $makefile = "makefile";
-	    # XXX parse more options
-	    Getopt::Long::GetOptions("f=s" => \$makefile);
-	    my @env;
-	    foreach (@ARGV) {
-		if (!defined $rule) {
-		    $rule = $_;
-		} elsif (/=/) {
-		    push @env, $_;
-		}
-	    }
-	}
+        my ($dir, $makeargs) = ($1, $2);
+        my $makefile;
+        my $rule;
+        {
+            require Getopt::Long;
+            local @ARGV = split /\s+/, $makeargs;
+            $makefile = "makefile";
+            # XXX parse more options
+            Getopt::Long::GetOptions("f=s" => \$makefile);
+            my @env;
+            foreach (@ARGV) {
+                if (!defined $rule) {
+                    $rule = $_;
+                } elsif (/=/) {
+                    push @env, $_;
+                }
+            }
+        }
 
 #	warn "dir: $dir, file: $makefile, rule: $rule\n";
-	my $f = "$dir/$makefile"; # XXX make better. use $make->{GNU}
-	$f = "$dir/Makefile" if !-r $f;
-	my $gm2 = GraphViz::Makefile->new($self->{GraphViz}, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
-	$gm2->generate($rule);
+        my $f = "$dir/$makefile"; # XXX make better. use $make->{GNU}
+        $f = "$dir/Makefile" if !-r $f;
+        my $gm2 = GraphViz::Makefile->new($self->{GraphViz}, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
+        $gm2->generate($rule);
 
-	$self->{GraphViz}->add_edge($target_name, "$dir/$rule");
+        $self->{GraphViz}->add_edge($target_name, "$dir/$rule");
     } else {
-	warn "can't match external make command in $cmd\n" if $V;
+        warn "can't match external make command in $cmd\n" if $V;
     }
 }
 
 sub _all_depends {
-    my($self, $make_target) = @_;
+    my ($self, $make_target) = @_;
     my @rules = @{ $make_target->rules };
     $self->find_recursive_makes($make_target->Name, $_)
-	for map @{ $_->exp_recipe($make_target) }, @rules;
+        for map @{ $_->exp_recipe($make_target) }, @rules;
     map @{ $_->prereqs }, @rules;
 }
 
