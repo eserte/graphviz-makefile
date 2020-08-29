@@ -20,6 +20,8 @@ use warnings;
 our $VERSION = '1.18';
 
 our $V = 0 unless defined $V;
+my @ALLOWED_ARGS = qw(reversed);
+my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
 
 sub new {
     my($pkg, $g, $make, $prefix, %args) = @_;
@@ -32,12 +34,9 @@ sub new {
 	$make->parse($makefile);
     }
 
-    my @allowed_args = qw(reversed);
-    my %allowed_args = map {($_,undef)} @allowed_args;
-    while(my($k,$v) = each %args) {
-	die "Unrecognized argument $k, known arguments are @allowed_args"
-	    if !exists $allowed_args{$k};
-    }
+    my @illegal_args = grep !exists $ALLOWED_ARGS{$_}, keys %args;
+    die "Unrecognized arguments @illegal_args, known arguments are @ALLOWED_ARGS"
+        if @illegal_args;
 
     my $self = { GraphViz => $g,
 		 Make     => $make,
