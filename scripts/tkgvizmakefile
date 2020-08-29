@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 # -*- perl -*-
 
 # Author: Slaven Rezic
@@ -12,6 +12,7 @@
 
 use GraphViz::Makefile;
 use strict;
+use warnings;
 our $VERSION = '1.09';
 
 {

@@ -15,11 +15,11 @@ package GraphViz::Makefile;
 use GraphViz;
 use Make;
 use strict;
+use warnings;
 
-use vars qw($VERSION $V);
-$VERSION = '1.18';
+our $VERSION = '1.18';
 
-$V = 0 unless defined $V;
+our $V = 0 unless defined $V;
 
 sub new {
     my($pkg, $g, $make, $prefix, %args) = @_;
