@@ -71,7 +71,7 @@ sub generate {
     $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
+        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for keys %$sub_edges;
     }
 }
 
@@ -115,13 +115,13 @@ sub generate_tree {
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
             my @recipe_edge = ($prefix.$target, $recipe_id);
             @recipe_edge = reverse @recipe_edge if $self->{reversed};
-            $edges->{$recipe_edge[0]}{$recipe_edge[1]} ||= [];
+            $edges->{$recipe_edge[0]}{$recipe_edge[1]} ||= {};
             warn "$recipe_edge[0] => $recipe_edge[1]\n" if $V >= 2;
             for my $dep (@{ $recipe_rule->{prereqs} }) {
                 $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
                 my @edge = ($recipe_id, $prefix.$dep);
                 @edge = reverse @edge if $self->{reversed};
-                $edges->{$edge[0]}{$edge[1]} ||= [];
+                $edges->{$edge[0]}{$edge[1]} ||= {};
                 warn "$edge[0] => $edge[1]\n" if $V >= 2;
                 $to_visit{$dep}++;
             }
@@ -132,7 +132,7 @@ sub generate_tree {
                 $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
                 my @edge = ($prefix.$target, $prefix.$dep);
                 @edge = reverse @edge if $self->{reversed};
-                $edges->{$edge[0]}{$edge[1]} ||= [];
+                $edges->{$edge[0]}{$edge[1]} ||= {};
                 warn "$edge[0] => $edge[1]\n" if $V >= 2;
                 $to_visit{$dep}++;
             }
@@ -209,7 +209,7 @@ Output to a .png file:
     $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
+        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for keys %$sub_edges;
     }
     $g->as_png("makefile.png");
 
@@ -273,11 +273,11 @@ C<dirname/targetname>.
     $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
+        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for keys %$sub_edges;
     }
 
 Return a hash-refs of nodes and edges. The values (or second-level
-values for edges) are array-refs of further arguments for the GraphViz
+values for edges) are hash-refs of further arguments for the GraphViz
 C<add_node> and C<add_edge> methods respectively.
 
 =item GraphViz

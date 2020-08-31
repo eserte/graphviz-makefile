@@ -30,19 +30,19 @@ my $model_expected = [
     ':recipe:2' => { %$node_recipe, label => 'perl prog3.pl $< > $@\\l' },
   },
   {
-    model => { ':recipe:1' => [] },
-    'data/features.tab' => { ':recipe:2' => [] },
-    ':recipe:1' => { 'data/features.tab' => [] },
-    ':recipe:2' => { 'otherfile' => [] },
+    model => { ':recipe:1' => {} },
+    'data/features.tab' => { ':recipe:2' => {} },
+    ':recipe:1' => { 'data/features.tab' => {} },
+    ':recipe:2' => { 'otherfile' => {} },
   },
 ];
 my $modelrev_expected = [
   $model_expected->[0],
   {
-    ':recipe:1' => { model => [] },
-    ':recipe:2' => { 'data/features.tab' => [] },
-    'data/features.tab' => { ':recipe:1' => [] },
-    'otherfile' => { ':recipe:2' => [] },
+    ':recipe:1' => { model => {} },
+    ':recipe:2' => { 'data/features.tab' => {} },
+    'data/features.tab' => { ':recipe:1' => {} },
+    'otherfile' => { ':recipe:2' => {} },
   },
 ];
 my $modelprefix_expected = [
@@ -54,10 +54,10 @@ my $modelprefix_expected = [
     ':recipe:2' => { %$node_recipe, label => 'perl prog3.pl $< > $@\\l' },
   },
   {
-    testmodel => { ':recipe:1' => [] },
-    'testdata/features.tab' => { ':recipe:2' => [] },
-    ':recipe:1' => { 'testdata/features.tab' => [] },
-    ':recipe:2' => { 'testotherfile' => [] },
+    testmodel => { ':recipe:1' => {} },
+    'testdata/features.tab' => { ':recipe:2' => {} },
+    ':recipe:1' => { 'testdata/features.tab' => {} },
+    ':recipe:2' => { 'testotherfile' => {} },
   },
 ];
 my $mgv_expected = [
@@ -74,11 +74,11 @@ my $mgv_expected = [
     ':recipe:3' => { %$node_recipe, label => 'echo Hey\\l' },
   },
   {
-    all => { ':recipe:1' => [] },
-    ':recipe:1' => { 'bar' => [], 'foo' => [] },
-    foo => { ':recipe:2' => [], ':recipe:3' => [] },
-    ':recipe:2' => { 'blah' => [], 'boo' => [] },
-    ':recipe:3' => { 'buz' => [], 'howdy' => [] },
+    all => { ':recipe:1' => {} },
+    ':recipe:1' => { 'bar' => {}, 'foo' => {} },
+    foo => { ':recipe:2' => {}, ':recipe:3' => {} },
+    ':recipe:2' => { 'blah' => {}, 'boo' => {} },
+    ':recipe:3' => { 'buz' => {}, 'howdy' => {} },
   },
 ];
 my $mgvnorecipe_expected = [
@@ -94,10 +94,10 @@ my $mgvnorecipe_expected = [
     ':recipe:2' => { %$node_recipe, label => 'echo Hey\\l' },
   },
   {
-    all => { 'bar' => [], 'foo' => [] },
-    foo => { ':recipe:1' => [], ':recipe:2' => [] },
-    ':recipe:1' => { 'blah' => [], 'boo' => [] },
-    ':recipe:2' => { 'buz' => [], 'howdy' => [] },
+    all => { 'bar' => {}, 'foo' => {} },
+    foo => { ':recipe:1' => {}, ':recipe:2' => {} },
+    ':recipe:1' => { 'blah' => {}, 'boo' => {} },
+    ':recipe:2' => { 'buz' => {}, 'howdy' => {} },
   },
 ];
 my @makefile_tests = (
