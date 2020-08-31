@@ -2,6 +2,7 @@
 - remove obsolete internal structure docs
 - add generate_tree method
 - deprecate mutating generate method
+- better styling for GraphViz
 
 1.18
 	- stable release with changes in 1.17_50 .. 1.17_51

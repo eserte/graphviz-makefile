@@ -19,11 +19,12 @@ BEGIN {
     }
 }
 
+my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
 my $model_expected = [
   {
-    model => [],
-    'data/features.tab' => [],
-    otherfile => [],
+    model => $node_target,
+    'data/features.tab' => $node_target,
+    otherfile => $node_target,
   },
   {
     model => { 'data/features.tab' => [] },
@@ -39,9 +40,9 @@ my $modelrev_expected = [
 ];
 my $modelprefix_expected = [
   {
-    testmodel => [],
-    'testdata/features.tab' => [],
-    testotherfile => [],
+    testmodel => $node_target,
+    'testdata/features.tab' => $node_target,
+    testotherfile => $node_target,
   },
   {
     testmodel => { 'testdata/features.tab' => [] },
@@ -50,13 +51,13 @@ my $modelprefix_expected = [
 ];
 my $mgv_expected = [
   {
-    all => [],
-    foo => [],
-    bar => [],
-    blah => [],
-    boo => [],
-    howdy => [],
-    buz => [],
+    all => $node_target,
+    foo => $node_target,
+    bar => $node_target,
+    blah => $node_target,
+    boo => $node_target,
+    howdy => $node_target,
+    buz => $node_target,
   },
   {
     all => { foo => [], bar => [] },

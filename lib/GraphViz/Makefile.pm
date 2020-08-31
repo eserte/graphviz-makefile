@@ -23,6 +23,14 @@ our $V = 0 unless defined $V;
 my @ALLOWED_ARGS = qw(reversed);
 my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
 
+our %NodeStyleTarget = (
+    shape     => 'box',
+    style     => 'filled',
+    fillcolor => '#ffff99',
+    fontname  => 'Arial',
+    fontsize  => 10,
+);
+
 sub new {
     my ($pkg, $g, $make, $prefix, %args) = @_;
     if (!$make) {
@@ -53,7 +61,7 @@ sub generate {
     $target = "all" if !defined $target;
     my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
     my $g = $self->GraphViz;
-    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
@@ -78,9 +86,9 @@ sub generate_tree {
         return;
     }
     my $prefix = $self->{Prefix};
-    $nodes->{$prefix.$target} ||= [];
+    $nodes->{$prefix.$target} ||= \%NodeStyleTarget;
     foreach my $dep (@depends) {
-        $nodes->{$prefix.$dep} ||= [];
+        $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
         my @edge = ($prefix.$target, $prefix.$dep);
         @edge = reverse @edge if $self->{reversed};
         $edges->{$edge[0]}{$edge[1]} ||= [];
@@ -147,7 +155,7 @@ Output to a .png file:
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     my $g = GraphViz->new;
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
@@ -211,7 +219,7 @@ C<dirname/targetname>.
 =item generate_tree($target)
 
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;

@@ -20,8 +20,8 @@ our $VERSION = '1.09';
     use GraphViz;
 
     sub as_tk_canvas {
-	my($self, $c) = @_;
-	GraphViz::TkCanvas::graphviz($c, $self->as_plain);
+        my($self, $c) = @_;
+        GraphViz::TkCanvas::graphviz($c, $self->as_plain);
     }
 }
 
@@ -30,32 +30,33 @@ our $VERSION = '1.09';
     use Text::ParseWords qw(shellwords);
 
     sub graphviz {
-	my($c, $text) = @_;
+        my($c, $text) = @_;
 
-	my $tfm = sub { my($x,$y) = @_; ($x*100,$y*100) };
-	foreach my $l (split /\n/, $text) {
-	    my(@w) = shellwords($l);
-	    if ($w[0] eq 'graph') {
-		$c->configure(-scrollregion => [$tfm->(0,0),$tfm->($w[2],$w[3])]);
-	    } elsif ($w[0] eq 'node') {
-		my($x,$y) = $tfm->($w[2],$w[3]);
-		my($w,$h) = $tfm->($w[4],$w[5]);
-		my $text = $w[6];
-		$c->createOval($x-$w/2,$y-$h/2,$x+$w/2,$y+$h/2, -fill=>"gray");
-		$c->createText($x,$y,-text => $text, -tag => ["rule","rule_$text"]);
-	    } elsif ($w[0] eq 'edge') {
-		my $no = $w[3];
-		my @coords;
-		for(my $i=0; $i<$no*2; $i+=2) {
-		    push @coords, $tfm->($w[4+$i], $w[5+$i]);
-		}
-		$c->createLine(@coords, -arrow => "last", -smooth => 1);
-	    } elsif ($w[0] eq 'stop') {
-		return;
-	    } else {
-		warn "Ignore directive @w\n";
-	    }
-	}
+        my $tfm = sub { my($x,$y) = @_; ($x*100,$y*100) };
+        foreach my $l (split /\n/, $text) {
+            # spec from https://www.graphviz.org/doc/info/output.html#d:plain
+            my(@w) = shellwords($l);
+            my $type = shift @w;
+            if ($type eq 'graph') {
+                $c->configure(-scrollregion => [$tfm->(0,0),$tfm->($w[1],$w[2])]);
+            } elsif ($type eq 'node') {
+                my ($name, $x, $y, $width, $height, $label, $style, $shape, $color, $fillcolor) = @w;
+                ($x,$y) = $tfm->($x, $y);
+                ($width,$height) = $tfm->($width, $height);
+                my $method = 'create' . ($shape eq 'box' ? 'Rectangle' : 'Oval');
+                $c->$method($x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor);
+                $c->createText($x,$y,-text => $label, -tag => ["rule","rule_$label"]);
+            } elsif ($type eq 'edge') {
+                my ($from, $to, $no) = splice @w, 0, 3;
+                my @coords;
+                push @coords, $tfm->(splice @w, 0, 2) while $no-- > 0;
+                $c->createLine(@coords, -arrow => "last", -smooth => 1);
+            } elsif ($type eq 'stop') {
+                return;
+            } else {
+                warn "Ignore directive $type @w\n";
+            }
+        }
     }
 }
 
@@ -64,33 +65,33 @@ our $VERSION = '1.09';
 
     # from Tk::CanvasUtil
     sub center_view {
-	my($c, $x, $y, %args) = @_;
-	my(@xview) = $c->xview;
-	my(@yview) = $c->yview;
-	my($xwidth) = $xview[1]-$xview[0];
-	my($ywidth) = $yview[1]-$yview[0];
-	my @scrollregion = ($Tk::VERSION == 800.017
-			    ? $c->cget(-scrollregion)
-			    : @{$c->cget(-scrollregion)});
-	my $see_view = ($c->{Configure}{-seeview} ? $c->{Configure}{-seeview} : 'see_view');
-	if (!defined $x || !defined $y) {
-	    $c->$see_view(0.5, 0.5, %args);
-	} else {
-	    $c->$see_view
-		(
-		 ($x-$scrollregion[0])/($scrollregion[2]-$scrollregion[0])
-		 - $xwidth/2,
-		 ($y-$scrollregion[1])/($scrollregion[3]-$scrollregion[1])
-		 - $ywidth/2,
-		 %args
-		);
-	}
+        my($c, $x, $y, %args) = @_;
+        my(@xview) = $c->xview;
+        my(@yview) = $c->yview;
+        my($xwidth) = $xview[1]-$xview[0];
+        my($ywidth) = $yview[1]-$yview[0];
+        my @scrollregion = ($Tk::VERSION == 800.017
+                            ? $c->cget(-scrollregion)
+                            : @{$c->cget(-scrollregion)});
+        my $see_view = ($c->{Configure}{-seeview} ? $c->{Configure}{-seeview} : 'see_view');
+        if (!defined $x || !defined $y) {
+            $c->$see_view(0.5, 0.5, %args);
+        } else {
+            $c->$see_view
+                (
+                 ($x-$scrollregion[0])/($scrollregion[2]-$scrollregion[0])
+                 - $xwidth/2,
+                 ($y-$scrollregion[1])/($scrollregion[3]-$scrollregion[1])
+                 - $ywidth/2,
+                 %args
+                );
+        }
     }
 
     sub see_view {
-	my($c, $tox, $toy) = @_;
-	$c->xview('moveto' => $tox);
-	$c->yview('moveto' => $toy);
+        my($c, $tox, $toy) = @_;
+        $c->xview('moveto' => $tox);
+        $c->yview('moveto' => $toy);
     }
 
 }
@@ -107,13 +108,13 @@ my $tkcanvastype = "best";
 my $prefix = "";
 my $reversed = 0;
 if (!GetOptions("f|file=s" => \$file,
-		"T=s" => \$outputtype,
-		"o=s" => \$outputfile,
-		"v!"  => \$GraphViz::Makefile::V,
-		"tkcanvastype=s" => \$tkcanvastype,
-		"prefix=s" => \$prefix,
-		"reversed!" => \$reversed,
-	       )) {
+                "T=s" => \$outputtype,
+                "o=s" => \$outputfile,
+                "v!"  => \$GraphViz::Makefile::V,
+                "tkcanvastype=s" => \$tkcanvastype,
+                "prefix=s" => \$prefix,
+                "reversed!" => \$reversed,
+               )) {
     require Pod::Usage;
     Pod::Usage::pod2usage(1);
 }
@@ -134,7 +135,7 @@ sub generate_graphviz {
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
     my $g = GraphViz->new;
     my ($nodes, $edges) = $gm->generate_tree($rule);
-    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
     for my $edge_start (keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
@@ -149,52 +150,52 @@ sub tkcanvas_output {
     my $c;
     $mw->configure(-menu => $mw->Menu(-menuitems => [
         [Cascade => "~File", -menuitems => [
-	    [Button => "~Open", -command => sub { choose_new_file($mw, $rule, $prefix, $gm_args) }],
-	    [Button => "E~xit", -command => sub { $mw->destroy }],
-	]],
+            [Button => "~Open", -command => sub { choose_new_file($mw, $rule, $prefix, $gm_args) }],
+            [Button => "E~xit", -command => sub { $mw->destroy }],
+        ]],
         [Cascade => "~View", -menuitems => [
-	    [Button => "Zoom ~in", -command => sub { zoom_in($c) }],
-	    [Button => "Zoom ~out", -command => sub { zoom_out($c) }],
+            [Button => "Zoom ~in", -command => sub { zoom_in($c) }],
+            [Button => "Zoom ~out", -command => sub { zoom_out($c) }],
         ]],
         [Cascade => "~Help", -menuitems => [
-	    [Button => "~About", -command => sub {
-		 $mw->messageBox(
-		     -icon => "info",
-		     -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
-		     -type => "ok"
-		 );
-	     }],
-	    [Button => "tkgvizmakefile Doc", -command => sub {
-		 require Tk::Pod;
-		 $mw->Pod(-file => $0);
-	     }],
-	    [Button => "GraphViz::Makefile Doc", -command => sub {
-		 require Tk::Pod;
-		 $mw->Pod(-file => "GraphViz::Makefile");
-	     }],
+            [Button => "~About", -command => sub {
+                 $mw->messageBox(
+                     -icon => "info",
+                     -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
+                     -type => "ok"
+                 );
+             }],
+            [Button => "tkgvizmakefile Doc", -command => sub {
+                 require Tk::Pod;
+                 $mw->Pod(-file => $0);
+             }],
+            [Button => "GraphViz::Makefile Doc", -command => sub {
+                 require Tk::Pod;
+                 $mw->Pod(-file => "GraphViz::Makefile");
+             }],
         ]],
     ]));
 
     if ($tkcanvastype =~ /^(best|tkgraphviz)$/ &&
-	eval { require Tk::GraphViz }) {
-	$tkcanvastype = "tkgraphviz";
+        eval { require Tk::GraphViz }) {
+        $tkcanvastype = "tkgraphviz";
     } else {
-	$tkcanvastype = "tkcanvas";
+        $tkcanvastype = "tkcanvas";
     }
 
     if ($tkcanvastype eq 'tkgraphviz') {
-	$c = $mw->Scrolled("GraphViz", -scrollbars => "osoe");
-	$c->createBindings;
-	$c->bind('node', '<Button-1>', sub {
-		     my @tags = $c->gettags('current');
-		     push @tags, undef unless (@tags % 2) == 0;
-		     my %tags = @tags;
-		     printf "Clicked node: '%s' => %s\n", $tags{node}, $tags{label};
-		 }
-		);
-	$c->itemconfigure('edge', -activefill => 'green');
+        $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe");
+        $c->createBindings;
+        $c->bind('node', '<Button-1>', sub {
+                     my @tags = $c->gettags('current');
+                     push @tags, undef unless (@tags % 2) == 0;
+                     my %tags = @tags;
+                     printf "Clicked node: '%s' => %s\n", $tags{node}, $tags{label};
+                 }
+                );
+        $c->itemconfigure('edge', -activefill => 'green');
     } else {
-	$c = $mw->Scrolled("Canvas", -scrollbars => "osoe");
+        $c = $mw->Scrolled("Canvas", -scrollbars => "osoe");
     }
     $c->pack(-fill=>"both", -expand=>1);
     $mw->Advertise(Graph => $c);
@@ -206,9 +207,9 @@ sub draw_graph {
     my($w, $rule, $prefix, $graphviz) = @_;
     my $c = $w->Subwidget("Graph");
     if ($tkcanvastype eq 'tkgraphviz') {
-	$c->show($graphviz);
+        $c->show($graphviz);
     } else {
-	$graphviz->as_tk_canvas($c);
+        $graphviz->as_tk_canvas($c);
     }
     my @c = $c->coords("rule_$prefix$rule");
     $c->idletasks;
@@ -233,15 +234,15 @@ sub zoom_any {
     $c->configure(-scrollregion => \@scrollregion);
     my $canvas_font = $c->{OrigFont};
     if (!$canvas_font) {
-	require Tk::Font;
-	my $text_item = ($c->find(withtag => "rule"))[0];
-	if (defined $text_item) {
-	    $canvas_font = $c->{OrigFont}
-		= $c->fontCreate("rulefont",
-				 $c->fontActual($c->itemcget($text_item, "-font")));
-	    $c->{WantFontSize} = $c->fontActual("rulefont", "-size");
-	    $c->itemconfigure("rule", -font => "rulefont");
-	}
+        require Tk::Font;
+        my $text_item = ($c->find(withtag => "rule"))[0];
+        if (defined $text_item) {
+            $canvas_font = $c->{OrigFont}
+                = $c->fontCreate("rulefont",
+                                 $c->fontActual($c->itemcget($text_item, "-font")));
+            $c->{WantFontSize} = $c->fontActual("rulefont", "-size");
+            $c->itemconfigure("rule", -font => "rulefont");
+        }
     }
     my $curr_size = $c->{WantFontSize};
     my $new_size = $curr_size * $scalefactor;
@@ -255,8 +256,8 @@ sub choose_new_file {
     my($w, $rule, $prefix, $gm_args) = @_;
     my $new_file = $w->getOpenFile;
     if (defined $new_file) {
-	my $graphviz = generate_graphviz($new_file, $rule, $prefix, $gm_args);
-	draw_graph($w, $rule, $prefix, $graphviz);
+        my $graphviz = generate_graphviz($new_file, $rule, $prefix, $gm_args);
+        draw_graph($w, $rule, $prefix, $graphviz);
     }
 }
 
@@ -270,14 +271,14 @@ sub is_in_path {
     require Config;
     my $sep = $Config::Config{'path_sep'} || ':';
     foreach (split(/$sep/o, $ENV{PATH})) {
-	if ($^O eq 'MSWin32') {
-	    return "$_\\$prog"
-		if (-x "$_\\$prog.bat" ||
-		    -x "$_\\$prog.com" ||
-		    -x "$_\\$prog.exe");
-	} else {
-	    return "$_/$prog" if (-x "$_/$prog");
-	}
+        if ($^O eq 'MSWin32') {
+            return "$_\\$prog"
+                if (-x "$_\\$prog.bat" ||
+                    -x "$_\\$prog.com" ||
+                    -x "$_\\$prog.exe");
+        } else {
+            return "$_/$prog" if (-x "$_/$prog");
+        }
     }
     undef;
 }
@@ -295,11 +296,11 @@ sub file_name_is_absolute {
         $r = File::Spec->file_name_is_absolute($file);
     };
     if ($@) {
-	if ($^O eq 'MSWin32') {
-	    $r = ($file =~ m;^([a-z]:(/|\\)|\\\\|//);i);
-	} else {
-	    $r = ($file =~ m|^/|);
-	}
+        if ($^O eq 'MSWin32') {
+            $r = ($file =~ m;^([a-z]:(/|\\)|\\\\|//);i);
+        } else {
+            $r = ($file =~ m|^/|);
+        }
     }
     $r;
 }
