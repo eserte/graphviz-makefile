@@ -124,13 +124,9 @@ my $graphviz = generate_graphviz($file, $rule, $prefix, $gm_args);
 if ($outputtype eq 'tkcanvas') {
     tkcanvas_output($rule, $graphviz, $prefix, $gm_args);
 } else {
+    die "-o is missing" if !defined $outputfile;
     my $meth = "as_" . $outputtype;
-    if (!defined $outputfile) {
-	die "-o is missing";
-    }
-    open my $fh, ">", $outputfile or die "Can't write to $outputfile: $!";
-    binmode $fh;
-    print $fh $graphviz->$meth();
+    $graphviz->$meth($outputfile);
 }
 
 sub generate_graphviz {
