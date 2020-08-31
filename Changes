@@ -1,6 +1,6 @@
 - cruelly drop support for 5.005 because three-arg open
 - remove obsolete internal structure docs
-- add generate_calls method
+- add generate_tree method
 - deprecate mutating generate method
 
 1.18

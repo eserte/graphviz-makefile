@@ -20,28 +20,30 @@ BEGIN {
 }
 
 my $model_expected = [
-  [ qw(add_node model) ],
-  [ qw(add_node data/features.tab) ],
-  [ qw(add_edge model data/features.tab) ],
-  [ qw(add_node data/features.tab) ],
-  [ qw(add_node otherfile) ],
-  [ qw(add_edge data/features.tab otherfile) ]
+  {
+    model => [],
+    'data/features.tab' => [],
+    otherfile => [],
+  },
+  {
+    model => { 'data/features.tab' => [] },
+    'data/features.tab' => { otherfile => [] },
+  },
 ];
 my $mgv_expected = [
-  [ qw(add_node all) ],
-  [ qw(add_node foo) ],
-  [ qw(add_edge all foo) ],
-  [ qw(add_node bar) ],
-  [ qw(add_edge all bar) ],
-  [ qw(add_node foo) ],
-  [ qw(add_node blah) ],
-  [ qw(add_edge foo blah) ],
-  [ qw(add_node boo) ],
-  [ qw(add_edge foo boo) ],
-  [ qw(add_node howdy) ],
-  [ qw(add_edge foo howdy) ],
-  [ qw(add_node buz) ],
-  [ qw(add_edge foo buz) ]
+  {
+    all => [],
+    foo => [],
+    bar => [],
+    blah => [],
+    boo => [],
+    howdy => [],
+    buz => [],
+  },
+  {
+    all => { foo => [], bar => [] },
+    foo => { blah => [], boo => [], howdy => [], buz => [] },
+  },
 ];
 my @makefile_tests = (
     ["$FindBin::RealBin/../Makefile", "all", undef],
@@ -62,8 +64,8 @@ for my $def (@makefile_tests) {
     my $gm = GraphViz::Makefile->new(undef, $makefile);
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {
-        my $got = [ $gm->generate_calls($target) ];
-        is_deeply $got, $expected, 'generate_calls' or diag explain $got;
+        my $got = [ $gm->generate_tree($target) ];
+        is_deeply $got, $expected, 'generate_tree' or diag explain $got;
     }
     $gm->generate($target);
 

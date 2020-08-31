@@ -51,17 +51,22 @@ sub Make     { shift->{Make}     }
 sub generate {
     my ($self, $target) = @_;
     $target = "all" if !defined $target;
+    my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
     my $g = $self->GraphViz;
-    for my $call ($self->generate_calls($self->{Make}->expand($target))) {
-        my ($method, @args) = @$call;
-        $g->$method(@args);
+    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    for my $edge_start (keys %$edges) {
+        my $sub_edges = $edges->{$edge_start};
+        $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
     }
 }
 
-sub generate_calls {
-    my ($self, $target, $seen) = @_;
-    $seen ||= {};
-    return if $seen->{$target}++;
+# mutates $nodes and $edges
+sub generate_tree {
+    my ($self, $target, $visited, $nodes, $edges) = @_;
+    $visited ||= {};
+    $nodes ||= {};
+    $edges ||= {};
+    return if $visited->{$target}++;
     if (!$self->{Make}->has_target($target)) {
         warn "Can't get make target for $target\n" if $V;
         return;
@@ -73,15 +78,16 @@ sub generate_calls {
         return;
     }
     my $prefix = $self->{Prefix};
-    my @calls = ([ 'add_node', $prefix.$target ]);
+    $nodes->{$prefix.$target} ||= [];
     foreach my $dep (@depends) {
-        push @calls, [ 'add_node', $prefix.$dep ] unless $seen->{$dep};
+        $nodes->{$prefix.$dep} ||= [];
         my @edge = ($prefix.$target, $prefix.$dep);
         @edge = reverse @edge if $self->{reversed};
-        push @calls, [ 'add_edge', @edge ];
+        $edges->{$edge[0]}{$edge[1]} ||= [];
         warn "$edge[0] => $edge[1]\n" if $V >= 2;
     }
-    (@calls, map $self->generate_calls($_, $seen), @depends);
+    $self->generate_tree($_, $visited, $nodes, $edges) for @depends;
+    ($nodes, $edges);
 }
 
 sub find_recursive_makes {
@@ -140,9 +146,11 @@ Output to a .png file:
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     my $g = GraphViz->new;
-    for my $call ($gm->generate_calls("all")) { # or another makefile target
-        my ($method, @args) = @$call;
-        $g->$method(@args);
+    my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
+    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    for my $edge_start (keys %$edges) {
+        my $sub_edges = $edges->{$edge_start};
+        $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
     }
     $g->as_png("makefile.png");
 
@@ -200,20 +208,24 @@ Search the command for a recursive make (change directory, call
 make). Incorporates into this graph with the subdirectory's target as
 C<dirname/targetname>.
 
-=item generate_calls($target)
+=item generate_tree($target)
 
-    for my $call ($gm->generate_calls($target)) {
-        my ($method, @args) = @$call;
-        $g->$method(@args);
+    my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
+    $g->add_node($_, @{ $nodes->{$_} }) for keys %$nodes;
+    for my $edge_start (keys %$edges) {
+        my $sub_edges = $edges->{$edge_start};
+        $g->add_edge($edge_start, $_, @{ $sub_edges->{$_} }) for keys %$sub_edges;
     }
 
-Return a list of array-refs of form C<[ $graphviz_method, @args ]>.
+Return a hash-refs of nodes and edges. The values (or second-level
+values for edges) are array-refs of further arguments for the GraphViz
+C<add_node> and C<add_edge> methods respectively.
 
 =item GraphViz
 
 Return a reference to the C<GraphViz> object. This object will be used
 for the output methods. Will only be created if used. It is recommended
-to instead use the C<generate_calls> method and make the calls on an
+to instead use the C<generate_tree> method and make the calls on an
 externally-controlled L<GraphViz> object.
 
 =item Make
