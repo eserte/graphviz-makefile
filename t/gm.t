@@ -34,10 +34,8 @@ my @makefile_tests = (
 );
 plan tests => @makefile_tests * 4;
 
-if (!defined $ENV{BATCH}) { $ENV{BATCH} = 1 }
-
 SKIP: {
-    skip("tkgvizmakefile test only with BATCH=0 mode", 1) if $ENV{BATCH};
+    skip("tkgvizmakefile test only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
     system("$^X", "-Mblib", "blib/script/tkgvizmakefile", "-reversed", "-prefix", "test-");
     pass("Run tkgvizmakefile ...");
 }
@@ -64,7 +62,7 @@ for my $def (@makefile_tests) {
 
         ok(-s $filename, "Non-empty png file for makefile $makefile");
 
-        skip("Display png file only with BATCH=0 mode", 1) if $ENV{BATCH};
+        skip("Display png file only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
         skip("ImageMagick/display not available", 1) if !is_in_path("display");
 
         system("display", $filename);
