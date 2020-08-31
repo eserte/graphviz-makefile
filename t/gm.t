@@ -37,6 +37,17 @@ my $modelrev_expected = [
     otherfile => { 'data/features.tab' => [] },
   },
 ];
+my $modelprefix_expected = [
+  {
+    testmodel => [],
+    'testdata/features.tab' => [],
+    testotherfile => [],
+  },
+  {
+    testmodel => { 'testdata/features.tab' => [] },
+    'testdata/features.tab' => { testotherfile => [] },
+  },
+];
 my $mgv_expected = [
   {
     all => [],
@@ -57,6 +68,7 @@ my @makefile_tests = (
     ["$FindBin::RealBin/Make-nosubst", "model", '', {}, $model_expected],
     ["$FindBin::RealBin/Make-subst", "model", '', {}, $model_expected],
     ["$FindBin::RealBin/Make-subst", "model", '', { reversed => 1 }, $modelrev_expected],
+    ["$FindBin::RealBin/Make-subst", "model", 'test', {}, $modelprefix_expected],
     ["$FindBin::RealBin/Make-mgv", "all", '', {}, $mgv_expected],
 );
 plan tests => @makefile_tests * 4;
