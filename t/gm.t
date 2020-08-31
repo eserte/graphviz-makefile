@@ -20,22 +20,29 @@ BEGIN {
 }
 
 my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
+my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
 my $model_expected = [
   {
     model => $node_target,
     'data/features.tab' => $node_target,
     otherfile => $node_target,
+    ':recipe:1' => { %$node_recipe, label => 'perl prog1.pl $<\\l' },
+    ':recipe:2' => { %$node_recipe, label => 'perl prog3.pl $< > $@\\l' },
   },
   {
-    model => { 'data/features.tab' => [] },
-    'data/features.tab' => { otherfile => [] },
+    model => { ':recipe:1' => [] },
+    'data/features.tab' => { ':recipe:2' => [] },
+    ':recipe:1' => { 'data/features.tab' => [] },
+    ':recipe:2' => { 'otherfile' => [] },
   },
 ];
 my $modelrev_expected = [
   $model_expected->[0],
   {
-    'data/features.tab' => { model => [] },
-    otherfile => { 'data/features.tab' => [] },
+    ':recipe:1' => { model => [] },
+    ':recipe:2' => { 'data/features.tab' => [] },
+    'data/features.tab' => { ':recipe:1' => [] },
+    'otherfile' => { ':recipe:2' => [] },
   },
 ];
 my $modelprefix_expected = [
@@ -43,10 +50,14 @@ my $modelprefix_expected = [
     testmodel => $node_target,
     'testdata/features.tab' => $node_target,
     testotherfile => $node_target,
+    ':recipe:1' => { %$node_recipe, label => 'perl prog1.pl $<\\l' },
+    ':recipe:2' => { %$node_recipe, label => 'perl prog3.pl $< > $@\\l' },
   },
   {
-    testmodel => { 'testdata/features.tab' => [] },
-    'testdata/features.tab' => { testotherfile => [] },
+    testmodel => { ':recipe:1' => [] },
+    'testdata/features.tab' => { ':recipe:2' => [] },
+    ':recipe:1' => { 'testdata/features.tab' => [] },
+    ':recipe:2' => { 'testotherfile' => [] },
   },
 ];
 my $mgv_expected = [
@@ -58,10 +69,35 @@ my $mgv_expected = [
     boo => $node_target,
     howdy => $node_target,
     buz => $node_target,
+    ':recipe:1' => { %$node_recipe, label => 'echo hallo\\l' },
+    ':recipe:2' => { %$node_recipe, label => 'echo Hi\\l' },
+    ':recipe:3' => { %$node_recipe, label => 'echo Hey\\l' },
   },
   {
-    all => { foo => [], bar => [] },
-    foo => { blah => [], boo => [], howdy => [], buz => [] },
+    all => { ':recipe:1' => [] },
+    ':recipe:1' => { 'bar' => [], 'foo' => [] },
+    foo => { ':recipe:2' => [], ':recipe:3' => [] },
+    ':recipe:2' => { 'blah' => [], 'boo' => [] },
+    ':recipe:3' => { 'buz' => [], 'howdy' => [] },
+  },
+];
+my $mgvnorecipe_expected = [
+  {
+    all => $node_target,
+    foo => $node_target,
+    bar => $node_target,
+    blah => $node_target,
+    boo => $node_target,
+    howdy => $node_target,
+    buz => $node_target,
+    ':recipe:1' => { %$node_recipe, label => 'echo Hi\\l' },
+    ':recipe:2' => { %$node_recipe, label => 'echo Hey\\l' },
+  },
+  {
+    all => { 'bar' => [], 'foo' => [] },
+    foo => { ':recipe:1' => [], ':recipe:2' => [] },
+    ':recipe:1' => { 'blah' => [], 'boo' => [] },
+    ':recipe:2' => { 'buz' => [], 'howdy' => [] },
   },
 ];
 my @makefile_tests = (
@@ -71,6 +107,7 @@ my @makefile_tests = (
     ["$FindBin::RealBin/Make-subst", "model", '', { reversed => 1 }, $modelrev_expected],
     ["$FindBin::RealBin/Make-subst", "model", 'test', {}, $modelprefix_expected],
     ["$FindBin::RealBin/Make-mgv", "all", '', {}, $mgv_expected],
+    ["$FindBin::RealBin/Make-mgv-norecipe", "all", '', {}, $mgvnorecipe_expected],
 );
 plan tests => @makefile_tests * 4;
 
@@ -82,6 +119,7 @@ SKIP: {
 
 for my $def (@makefile_tests) {
     my ($makefile, $target, $prefix, $extra, $expected) = @$def;
+    GraphViz::Makefile::_reset_id();
     my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {

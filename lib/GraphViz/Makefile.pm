@@ -30,6 +30,13 @@ our %NodeStyleTarget = (
     fontname  => 'Arial',
     fontsize  => 10,
 );
+our %NodeStyleRecipe = (
+    shape     => 'note',
+    style     => 'filled',
+    fillcolor => '#dddddd',
+    fontname  => 'Monospace',
+    fontsize  => 8,
+);
 
 sub new {
     my ($pkg, $g, $make, $prefix, %args) = @_;
@@ -68,6 +75,17 @@ sub generate {
     }
 }
 
+my ($id_counter, %ref2counter);
+sub _gen_id {
+    my ($ref) = @_;
+    $ref2counter{$ref} ||= ++$id_counter;
+    ':recipe:' . $ref2counter{$ref}; # needs to be unique to that recipe
+}
+sub _reset_id {
+    undef %ref2counter;
+    $id_counter = 0;
+}
+
 # mutates $nodes and $edges
 sub generate_tree {
     my ($self, $target, $visited, $nodes, $edges) = @_;
@@ -79,22 +97,48 @@ sub generate_tree {
         warn "Can't get make target for $target\n" if $V;
         return;
     }
+    my $prefix = $self->{Prefix};
+    $nodes->{$prefix.$target} ||= \%NodeStyleTarget;
     my $make_target = $self->{Make}->target($target);
-    my @depends = $self->_all_depends($make_target);
-    if (!@depends) {
+    my ($recipe_rules, $bare_rules) = _rules_partition($make_target);
+    my @merged_rules = _rules_merge($recipe_rules, $bare_rules);
+    if (!@merged_rules and !@$bare_rules) {
         warn "No depends for target $target\n" if $V;
         return;
     }
-    my $prefix = $self->{Prefix};
-    $nodes->{$prefix.$target} ||= \%NodeStyleTarget;
-    foreach my $dep (@depends) {
-        $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-        my @edge = ($prefix.$target, $prefix.$dep);
-        @edge = reverse @edge if $self->{reversed};
-        $edges->{$edge[0]}{$edge[1]} ||= [];
-        warn "$edge[0] => $edge[1]\n" if $V >= 2;
+    my %to_visit;
+    if (@merged_rules) {
+        for my $recipe_rule (@merged_rules) {
+            my $recipe_id = _gen_id($recipe_rule->{recipe});
+            my $recipe_label = join '', map "$_\\l", @{ $recipe_rule->{recipe} };
+            $recipe_label =~ s/"/\\"/g; # GraphViz.pm quoting is broken
+            $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
+            my @recipe_edge = ($prefix.$target, $recipe_id);
+            @recipe_edge = reverse @recipe_edge if $self->{reversed};
+            $edges->{$recipe_edge[0]}{$recipe_edge[1]} ||= [];
+            warn "$recipe_edge[0] => $recipe_edge[1]\n" if $V >= 2;
+            for my $dep (@{ $recipe_rule->{prereqs} }) {
+                $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
+                my @edge = ($recipe_id, $prefix.$dep);
+                @edge = reverse @edge if $self->{reversed};
+                $edges->{$edge[0]}{$edge[1]} ||= [];
+                warn "$edge[0] => $edge[1]\n" if $V >= 2;
+                $to_visit{$dep}++;
+            }
+        }
+    } else {
+        for my $bare_rule (@$bare_rules) {
+            for my $dep (@{ $bare_rule->prereqs }) {
+                $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
+                my @edge = ($prefix.$target, $prefix.$dep);
+                @edge = reverse @edge if $self->{reversed};
+                $edges->{$edge[0]}{$edge[1]} ||= [];
+                warn "$edge[0] => $edge[1]\n" if $V >= 2;
+                $to_visit{$dep}++;
+            }
+        }
     }
-    $self->generate_tree($_, $visited, $nodes, $edges) for @depends;
+    $self->generate_tree($_, $visited, $nodes, $edges) for sort keys %to_visit;
     ($nodes, $edges);
 }
 
@@ -130,12 +174,19 @@ sub find_recursive_makes {
     }
 }
 
-sub _all_depends {
-    my ($self, $make_target) = @_;
+sub _rules_partition {
+    my ($make_target) = @_;
     my @rules = @{ $make_target->rules };
-    $self->find_recursive_makes($make_target->Name, $_)
-        for map @{ $_->exp_recipe($make_target) }, @rules;
-    map @{ $_->prereqs }, @rules;
+    my (@recipe_rules, @bare_rules);
+    push @{ @{$_->recipe} ? \@recipe_rules : \@bare_rules }, $_ for @rules;
+    (\@recipe_rules, \@bare_rules);
+}
+
+sub _rules_merge {
+    my ($recipe_rules, $bare_rules) = @_;
+    my @bare_deps = map @{ $_->prereqs }, @$bare_rules;
+    map +{ recipe => $_->recipe, prereqs => [ @{ $_->prereqs }, @bare_deps ] },
+        @$recipe_rules;
 }
 
 1;

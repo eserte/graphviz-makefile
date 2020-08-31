@@ -27,15 +27,15 @@ our $VERSION = '1.09';
 
 {
     package GraphViz::TkCanvas;
-    use Text::ParseWords qw(shellwords);
+    use Text::ParseWords qw(quotewords);
 
     sub graphviz {
         my($c, $text) = @_;
 
         my $tfm = sub { my($x,$y) = @_; ($x*100,$y*100) };
-        foreach my $l (split /\n/, $text) {
+        foreach my $l (split /(?<!\\)\n/, $text) {
             # spec from https://www.graphviz.org/doc/info/output.html#d:plain
-            my(@w) = shellwords($l);
+            my(@w) = quotewords('\s+', 1, $l);
             my $type = shift @w;
             if ($type eq 'graph') {
                 $c->configure(-scrollregion => [$tfm->(0,0),$tfm->($w[1],$w[2])]);
@@ -43,8 +43,12 @@ our $VERSION = '1.09';
                 my ($name, $x, $y, $width, $height, $label, $style, $shape, $color, $fillcolor) = @w;
                 ($x,$y) = $tfm->($x, $y);
                 ($width,$height) = $tfm->($width, $height);
-                my $method = 'create' . ($shape eq 'box' ? 'Rectangle' : 'Oval');
+                my $method = 'create' . ($shape =~ /^(box|note)$/ ? 'Rectangle' : 'Oval');
                 $c->$method($x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor);
+                $label =~ s/\\\n//g; # undo GraphViz long-line-breaking
+                $label =~ s/\A"(.*)"\z/$1/g;
+                $label =~ s/\\l/\n/g;
+                chomp $label;
                 $c->createText($x,$y,-text => $label, -tag => ["rule","rule_$label"]);
             } elsif ($type eq 'edge') {
                 my ($from, $to, $no) = splice @w, 0, 3;
