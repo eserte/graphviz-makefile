@@ -30,6 +30,13 @@ my $model_expected = [
     'data/features.tab' => { otherfile => [] },
   },
 ];
+my $modelrev_expected = [
+  $model_expected->[0],
+  {
+    'data/features.tab' => { model => [] },
+    otherfile => { 'data/features.tab' => [] },
+  },
+];
 my $mgv_expected = [
   {
     all => [],
@@ -46,10 +53,11 @@ my $mgv_expected = [
   },
 ];
 my @makefile_tests = (
-    ["$FindBin::RealBin/../Makefile", "all", undef],
-    ["$FindBin::RealBin/Make-nosubst", "model", $model_expected],
-    ["$FindBin::RealBin/Make-subst", "model", $model_expected],
-    ["$FindBin::RealBin/Make-mgv", "all", $mgv_expected],
+    ["$FindBin::RealBin/../Makefile", "all", '', {}, undef],
+    ["$FindBin::RealBin/Make-nosubst", "model", '', {}, $model_expected],
+    ["$FindBin::RealBin/Make-subst", "model", '', {}, $model_expected],
+    ["$FindBin::RealBin/Make-subst", "model", '', { reversed => 1 }, $modelrev_expected],
+    ["$FindBin::RealBin/Make-mgv", "all", '', {}, $mgv_expected],
 );
 plan tests => @makefile_tests * 4;
 
@@ -60,8 +68,8 @@ SKIP: {
 }
 
 for my $def (@makefile_tests) {
-    my ($makefile, $target, $expected) = @$def;
-    my $gm = GraphViz::Makefile->new(undef, $makefile);
+    my ($makefile, $target, $prefix, $extra, $expected) = @$def;
+    my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {
         my $got = [ $gm->generate_tree($target) ];
