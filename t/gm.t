@@ -27,10 +27,27 @@ my $model_expected = [
   [ qw(add_node otherfile) ],
   [ qw(add_edge data/features.tab otherfile) ]
 ];
+my $mgv_expected = [
+  [ qw(add_node all) ],
+  [ qw(add_node foo) ],
+  [ qw(add_edge all foo) ],
+  [ qw(add_node bar) ],
+  [ qw(add_edge all bar) ],
+  [ qw(add_node foo) ],
+  [ qw(add_node blah) ],
+  [ qw(add_edge foo blah) ],
+  [ qw(add_node boo) ],
+  [ qw(add_edge foo boo) ],
+  [ qw(add_node howdy) ],
+  [ qw(add_edge foo howdy) ],
+  [ qw(add_node buz) ],
+  [ qw(add_edge foo buz) ]
+];
 my @makefile_tests = (
     ["$FindBin::RealBin/../Makefile", "all", undef],
     ["$FindBin::RealBin/Make-nosubst", "model", $model_expected],
     ["$FindBin::RealBin/Make-subst", "model", $model_expected],
+    ["$FindBin::RealBin/Make-mgv", "all", $mgv_expected],
 );
 plan tests => @makefile_tests * 4;
 

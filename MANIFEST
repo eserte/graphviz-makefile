@@ -6,6 +6,7 @@ MANIFEST.SKIP
 README
 scripts/tkgvizmakefile
 t/gm.t
+t/Make-mgv
 t/Make-nosubst
 t/Make-subst
 xt/manifest.t
