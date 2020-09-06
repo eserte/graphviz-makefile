@@ -110,8 +110,10 @@ sub generate_tree {
     if (@merged_rules) {
         for my $recipe_rule (@merged_rules) {
             my $recipe_id = _gen_id($recipe_rule->{recipe});
-            my $recipe_label = join '', map "$_\\l", @{ $recipe_rule->{recipe} };
-            $recipe_label =~ s/"/\\"/g; # GraphViz.pm quoting is broken
+            my @recipe_lines = @{ $recipe_rule->{recipe} };
+            s/\\/\\\\/g for @recipe_lines;
+            s/"/\\"/g for @recipe_lines;
+            my $recipe_label = join '', map "$_\\l", @recipe_lines;
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
             my @recipe_edge = ($prefix.$target, $recipe_id);
             @recipe_edge = reverse @recipe_edge if $self->{reversed};

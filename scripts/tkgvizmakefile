@@ -48,6 +48,7 @@ our $VERSION = '1.09';
                 $label =~ s/\\\n//g; # undo GraphViz long-line-breaking
                 $label =~ s/\A"(.*)"\z/$1/g;
                 $label =~ s/\\l/\n/g;
+                $label =~ s/\\\\/\\/g; # undo the GraphViz-required \-quoting
                 chomp $label;
                 $c->createText($x,$y,-text => $label, -tag => ["rule","rule_$label"]);
             } elsif ($type eq 'edge') {
