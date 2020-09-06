@@ -100,14 +100,56 @@ my $mgvnorecipe_expected = [
     ':recipe:2' => { 'buz' => {}, 'howdy' => {} },
   },
 ];
+my $make_subst = <<'EOF';
+DATA=data
+
+model: $(DATA)/features.tab
+	perl prog1.pl $<
+
+$(DATA)/features.tab: otherfile
+	perl prog3.pl $< > $@
+EOF
 my @makefile_tests = (
     ["$FindBin::RealBin/../Makefile", "all", '', {}, undef],
-    ["$FindBin::RealBin/Make-nosubst", "model", '', {}, $model_expected],
-    ["$FindBin::RealBin/Make-subst", "model", '', {}, $model_expected],
-    ["$FindBin::RealBin/Make-subst", "model", '', { reversed => 1 }, $modelrev_expected],
-    ["$FindBin::RealBin/Make-subst", "model", 'test', {}, $modelprefix_expected],
-    ["$FindBin::RealBin/Make-mgv", "all", '', {}, $mgv_expected],
-    ["$FindBin::RealBin/Make-mgv-norecipe", "all", '', {}, $mgvnorecipe_expected],
+    [\<<'EOF', "model", '', {}, $model_expected],
+model: data/features.tab
+	perl prog1.pl $<
+
+data/features.tab: otherfile
+	perl prog3.pl $< > $@
+EOF
+    [\$make_subst, "model", '', {}, $model_expected],
+    [\$make_subst, "model", '', { reversed => 1 }, $modelrev_expected],
+    [\$make_subst, "model", 'test', {}, $modelprefix_expected],
+    [\<<'EOF', "all", '', {}, $mgv_expected],
+all: foo
+all: bar
+	echo hallo
+
+any: foo hiya
+	echo larry
+	echo howdy
+any: blah blow
+
+foo:: blah boo
+	echo Hi
+foo:: howdy buz
+	echo Hey
+EOF
+    [\<<'EOF', "all", '', {}, $mgvnorecipe_expected],
+all: foo
+all: bar
+
+any: foo hiya
+	echo larry
+	echo howdy
+any: blah blow
+
+foo:: blah boo
+	echo Hi
+foo:: howdy buz
+	echo Hey
+EOF
 );
 plan tests => @makefile_tests * 4;
 

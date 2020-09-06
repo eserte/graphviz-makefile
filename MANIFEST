@@ -6,10 +6,6 @@ MANIFEST.SKIP
 README
 scripts/tkgvizmakefile
 t/gm.t
-t/Make-mgv
-t/Make-mgv-norecipe
-t/Make-nosubst
-t/Make-subst
 xt/manifest.t
 xt/pod-coverage.t
 xt/pod.t
