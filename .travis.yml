@@ -3,7 +3,7 @@ language: perl
 jobs:
   include:
     - perl: "5.30"
-      env: RELEASE_TESTING=1
+      env: RELEASE_TESTING=1 COVERAGE=1
     - perl: "5.26"
     - perl: "5.22"
     - perl: "5.16"
