@@ -68,10 +68,10 @@ sub generate {
     $target = "all" if !defined $target;
     my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
     my $g = $self->GraphViz;
-    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
-    for my $edge_start (keys %$edges) {
+    $g->add_node($_, %{ $nodes->{$_} }) for sort keys %$nodes;
+    for my $edge_start (sort keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for keys %$sub_edges;
+        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for sort keys %$sub_edges;
     }
 }
 
@@ -191,6 +191,43 @@ sub _rules_merge {
         @$recipe_rules;
 }
 
+sub graphviz2tk {
+    my($text) = @_;
+    require Text::ParseWords;
+    my $tfm = sub { my($x,$y) = @_; ($x*100,$y*100) };
+    my @methods;
+    foreach my $l (split /(?<!\\)\n/, $text) {
+        # spec from https://www.graphviz.org/doc/info/output.html#d:plain
+        my(@w) = Text::ParseWords::quotewords('\s+', 1, $l);
+        my $type = shift @w;
+        if ($type eq 'graph') {
+            push @methods, [ 'configure', -scrollregion => [$tfm->(0,0),$tfm->($w[1],$w[2])] ];
+        } elsif ($type eq 'node') {
+            my ($name, $x, $y, $width, $height, $label, $style, $shape, $color, $fillcolor) = @w;
+            ($x,$y) = $tfm->($x, $y);
+            ($width,$height) = $tfm->($width, $height);
+            my $method = 'create' . ($shape =~ /^(box|note)$/ ? 'Rectangle' : 'Oval');
+            push @methods, [ $method, $x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor ];
+            $label =~ s/\\\n//g; # undo GraphViz long-line-breaking
+            $label =~ s/\A"(.*)"\z/$1/g;
+            $label =~ s/\\l/\n/g;
+            $label =~ s/\\\\/\\/g; # undo the GraphViz-required \-quoting
+            chomp $label;
+            push @methods, [ 'createText', $x,$y,-text => $label, -tag => ["rule","rule_$label"] ];
+        } elsif ($type eq 'edge') {
+            my ($from, $to, $no) = splice @w, 0, 3;
+            my @coords;
+            push @coords, $tfm->(splice @w, 0, 2) while $no-- > 0;
+            push @methods, [ 'createLine', @coords, -arrow => "last", -smooth => 1 ];
+        } elsif ($type eq 'stop') {
+            last;
+        } else {
+            warn "Ignore directive $type @w\n";
+        }
+    }
+    @methods;
+}
+
 1;
 
 
@@ -208,10 +245,10 @@ Output to a .png file:
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     my $g = GraphViz->new;
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
-    for my $edge_start (keys %$edges) {
+    $g->add_node($_, %{ $nodes->{$_} }) for sort keys %$nodes;
+    for my $edge_start (sort keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for keys %$sub_edges;
+        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for sort keys %$sub_edges;
     }
     $g->as_png("makefile.png");
 
@@ -272,10 +309,10 @@ C<dirname/targetname>.
 =item generate_tree($target)
 
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node($_, %{ $nodes->{$_} }) for keys %$nodes;
-    for my $edge_start (keys %$edges) {
+    $g->add_node($_, %{ $nodes->{$_} }) for sort keys %$nodes;
+    for my $edge_start (sort keys %$edges) {
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for keys %$sub_edges;
+        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for sort keys %$sub_edges;
     }
 
 Return a hash-refs of nodes and edges. The values (or second-level
@@ -295,7 +332,21 @@ Return a reference to the C<Make> object.
  
 =back
 
-=head2 ALTERNATIVES
+=head1 FUNCTIONS
+
+=head2 graphviz2tk
+
+    my $c = $w->Subwidget("Graph");
+    for my $m (GraphViz::Makefile::graphviz2tk($graphviz->as_plain)) {
+        my ($method, @args) = @$m;
+        $c->$method(@args);
+    }
+
+Given the result of L<GraphViz/as_plain>, returns list of array-refs
+whose first element is a Tk Graph method call, and the rest is
+the arguments.
+
+=head1 ALTERNATIVES
 
 There's another module doing the same thing: L<Makefile::GraphViz>.
 

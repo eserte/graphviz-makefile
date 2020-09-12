@@ -16,56 +16,6 @@ use warnings;
 our $VERSION = '1.09';
 
 {
-    package GraphViz;
-    use GraphViz;
-
-    sub as_tk_canvas {
-        my($self, $c) = @_;
-        GraphViz::TkCanvas::graphviz($c, $self->as_plain);
-    }
-}
-
-{
-    package GraphViz::TkCanvas;
-    use Text::ParseWords qw(quotewords);
-
-    sub graphviz {
-        my($c, $text) = @_;
-
-        my $tfm = sub { my($x,$y) = @_; ($x*100,$y*100) };
-        foreach my $l (split /(?<!\\)\n/, $text) {
-            # spec from https://www.graphviz.org/doc/info/output.html#d:plain
-            my(@w) = quotewords('\s+', 1, $l);
-            my $type = shift @w;
-            if ($type eq 'graph') {
-                $c->configure(-scrollregion => [$tfm->(0,0),$tfm->($w[1],$w[2])]);
-            } elsif ($type eq 'node') {
-                my ($name, $x, $y, $width, $height, $label, $style, $shape, $color, $fillcolor) = @w;
-                ($x,$y) = $tfm->($x, $y);
-                ($width,$height) = $tfm->($width, $height);
-                my $method = 'create' . ($shape =~ /^(box|note)$/ ? 'Rectangle' : 'Oval');
-                $c->$method($x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor);
-                $label =~ s/\\\n//g; # undo GraphViz long-line-breaking
-                $label =~ s/\A"(.*)"\z/$1/g;
-                $label =~ s/\\l/\n/g;
-                $label =~ s/\\\\/\\/g; # undo the GraphViz-required \-quoting
-                chomp $label;
-                $c->createText($x,$y,-text => $label, -tag => ["rule","rule_$label"]);
-            } elsif ($type eq 'edge') {
-                my ($from, $to, $no) = splice @w, 0, 3;
-                my @coords;
-                push @coords, $tfm->(splice @w, 0, 2) while $no-- > 0;
-                $c->createLine(@coords, -arrow => "last", -smooth => 1);
-            } elsif ($type eq 'stop') {
-                return;
-            } else {
-                warn "Ignore directive $type @w\n";
-            }
-        }
-    }
-}
-
-{
     package Tk::Canvas;
 
     # from Tk::CanvasUtil
@@ -214,7 +164,10 @@ sub draw_graph {
     if ($tkcanvastype eq 'tkgraphviz') {
         $c->show($graphviz);
     } else {
-        $graphviz->as_tk_canvas($c);
+        for my $m (GraphViz::Makefile::graphviz2tk($graphviz->as_plain)) {
+            my ($method, @args) = @$m;
+            $c->$method(@args);
+        }
     }
     my @c = $c->coords("rule_$prefix$rule");
     $c->idletasks;

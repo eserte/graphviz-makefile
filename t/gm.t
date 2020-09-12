@@ -151,7 +151,7 @@ foo:: howdy buz
 	echo Hey
 EOF
 );
-plan tests => @makefile_tests * 4;
+plan tests => 1 + @makefile_tests * 4;
 
 SKIP: {
     skip("tkgvizmakefile test only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
@@ -188,6 +188,47 @@ for my $def (@makefile_tests) {
         system("display", $filename);
         pass("Displayed...");
     }
+}
+
+SKIP: {
+  skip "graphviz2tk test only with INTERACTIVE=1 mode", 1 if !$ENV{INTERACTIVE};
+  no warnings 'qw';
+  GraphViz::Makefile::_reset_id();
+  my $gm = GraphViz::Makefile->new(undef, $makefile_tests[5][0]);
+  $gm->generate;
+  my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->as_plain) ];
+  is_deeply $got_tk, [
+    [ qw(configure -scrollregion), [ 0, 0, '375', '450' ] ],
+    [ qw(createRectangle 94.4445 300 180.5555 350 -fill #dddddd) ],
+    [ qw(createText 137.5 325 -text), 'echo hallo', -tag => [ 'rule', 'rule_echo hallo' ] ],
+    [ qw(createRectangle 100 100 175 150 -fill #dddddd) ],
+    [ qw(createText 137.5 125 -text), 'echo Hi', -tag => [ 'rule', 'rule_echo Hi' ] ],
+    [ qw(createRectangle 200 100 275 150 -fill #dddddd) ],
+    [ qw(createText 237.5 125 -text), 'echo Hey', -tag => [ 'rule', 'rule_echo Hey' ] ],
+    [ qw(createRectangle 100 400 175 450 -fill #ffff99) ],
+    [ qw(createText 137.5 425 -text), 'all', -tag => [ 'rule', 'rule_all' ] ],
+    [ qw(createRectangle 50 200 125 250 -fill #ffff99) ],
+    [ qw(createText 87.5 225 -text), 'bar', -tag => [ 'rule', 'rule_bar' ] ],
+    [ qw(createRectangle 0 0 75 50 -fill #ffff99) ],
+    [ qw(createText 37.5 25 -text), 'blah', -tag => [ 'rule', 'rule_blah' ] ],
+    [ qw(createRectangle 100 0 175 50 -fill #ffff99) ],
+    [ qw(createText 137.5 25 -text), 'boo', -tag => [ 'rule', 'rule_boo' ] ],
+    [ qw(createRectangle 200 0 275 50 -fill #ffff99) ],
+    [ qw(createText 237.5 25 -text), 'buz', -tag => [ 'rule', 'rule_buz' ] ],
+    [ qw(createRectangle 150 200 225 250 -fill #ffff99) ],
+    [ qw(createText 187.5 225 -text), 'foo', -tag => [ 'rule', 'rule_foo' ] ],
+    [ qw(createRectangle 300 0 375 50 -fill #ffff99) ],
+    [ qw(createText 337.5 25 -text), 'howdy', -tag => [ 'rule', 'rule_howdy' ] ],
+    [ qw(createLine 125.14 299.58 119.45 288.51 112.57 275.14 106.26 262.87 -arrow last -smooth 1) ],
+    [ qw(createLine 149.86 299.58 155.55 288.51 162.43 275.14 168.74 262.87 -arrow last -smooth 1) ],
+    [ qw(createLine 112.78 99.579 100.55 87.688 85.58 73.134 72.221 60.145 -arrow last -smooth 1) ],
+    [ qw(createLine 137.5 99.579 137.5 88.865 137.5 75.99 137.5 64.045 -arrow last -smooth 1) ],
+    [ qw(createLine 237.5 99.579 237.5 88.865 237.5 75.99 237.5 64.045 -arrow last -smooth 1) ],
+    [ qw(createLine 262.22 99.579 274.45 87.688 289.42 73.134 302.78 60.145 -arrow last -smooth 1) ],
+    [ qw(createLine 137.5 399.58 137.5 388.86 137.5 375.99 137.5 364.05 -arrow last -smooth 1) ],
+    [ qw(createLine 175.14 199.58 169.45 188.51 162.57 175.14 156.26 162.87 -arrow last -smooth 1) ],
+    [ qw(createLine 199.86 199.58 205.55 188.51 212.43 175.14 218.74 162.87 -arrow last -smooth 1) ],
+  ], 'graphviz2tk' or diag explain $got_tk;
 }
 
 ######################################################################
