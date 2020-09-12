@@ -69,7 +69,7 @@ my $mgv_expected = [
     boo => $node_target,
     howdy => $node_target,
     buz => $node_target,
-    ':recipe:1' => { %$node_recipe, label => 'echo hallo\\l' },
+    ':recipe:1' => { %$node_recipe, label => 'echo hallo perl\\\\lib double\\\\\\\\l\\l' },
     ':recipe:2' => { %$node_recipe, label => 'echo Hi\\l' },
     ':recipe:3' => { %$node_recipe, label => 'echo Hey\\l' },
   },
@@ -124,7 +124,7 @@ EOF
     [\<<'EOF', "all", '', {}, $mgv_expected],
 all: foo
 all: bar
-	echo hallo
+	echo hallo perl\lib double\\l
 
 any: foo hiya
 	echo larry
@@ -199,8 +199,8 @@ SKIP: {
   my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->as_plain) ];
   is_deeply $got_tk, [
     [ qw(configure -scrollregion), [ 0, 0, '375', '450' ] ],
-    [ qw(createRectangle 94.4445 300 180.5555 350 -fill #dddddd) ],
-    [ qw(createText 137.5 325 -text), 'echo hallo', -tag => [ 'rule', 'rule_echo hallo' ] ],
+    [ qw(createRectangle 35.415 300 239.585 350 -fill #dddddd) ],
+    [ qw(createText 137.5 325 -text), 'echo hallo perl\\lib double\\\\l', -tag => [ 'rule', 'rule_echo hallo perl\\lib double\\\\l' ] ],
     [ qw(createRectangle 100 100 175 150 -fill #dddddd) ],
     [ qw(createText 137.5 125 -text), 'echo Hi', -tag => [ 'rule', 'rule_echo Hi' ] ],
     [ qw(createRectangle 200 100 275 150 -fill #dddddd) ],

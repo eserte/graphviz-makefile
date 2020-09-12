@@ -191,6 +191,10 @@ sub _rules_merge {
         @$recipe_rules;
 }
 
+my %GRAPHVIZ_ESCAPE = (
+  l => "\n", "\n" => "",
+  map +($_ => $_), qw({ } " \\ < > [ ]),
+);
 sub graphviz2tk {
     my($text) = @_;
     require Text::ParseWords;
@@ -208,10 +212,12 @@ sub graphviz2tk {
             ($width,$height) = $tfm->($width, $height);
             my $method = 'create' . ($shape =~ /^(box|note)$/ ? 'Rectangle' : 'Oval');
             push @methods, [ $method, $x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor ];
-            $label =~ s/\\\n//g; # undo GraphViz long-line-breaking
-            $label =~ s/\A"(.*)"\z/$1/g;
-            $label =~ s/\\l/\n/g;
-            $label =~ s/\\\\/\\/g; # undo the GraphViz-required \-quoting
+            $label =~ s/\A"(.*)"\z/$1/gs;
+            $label =~ s/\\(.)/
+              my $e = $GRAPHVIZ_ESCAPE{$1};
+              die "Unknown GraphViz escape '$1' in '$label'" unless defined $e;
+              $e;
+            /gse;
             chomp $label;
             push @methods, [ 'createText', $x,$y,-text => $label, -tag => ["rule","rule_$label"] ];
         } elsif ($type eq 'edge') {
