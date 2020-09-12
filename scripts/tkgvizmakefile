@@ -266,51 +266,6 @@ sub choose_new_file {
     }
 }
 
-# REPO BEGIN
-# REPO NAME is_in_path /home/e/eserte/src/repository 
-# REPO MD5 1b42243230d92021e6c361e37c9771d1
-
-sub is_in_path {
-    my($prog) = @_;
-    return $prog if (file_name_is_absolute($prog) and -f $prog and -x $prog);
-    require Config;
-    my $sep = $Config::Config{'path_sep'} || ':';
-    foreach (split(/$sep/o, $ENV{PATH})) {
-        if ($^O eq 'MSWin32') {
-            return "$_\\$prog"
-                if (-x "$_\\$prog.bat" ||
-                    -x "$_\\$prog.com" ||
-                    -x "$_\\$prog.exe");
-        } else {
-            return "$_/$prog" if (-x "$_/$prog");
-        }
-    }
-    undef;
-}
-# REPO END
-
-# REPO BEGIN
-# REPO NAME file_name_is_absolute /home/e/eserte/src/repository 
-# REPO MD5 a77759517bc00f13c52bb91d861d07d0
-
-sub file_name_is_absolute {
-    my $file = shift;
-    my $r;
-    eval {
-        require File::Spec;
-        $r = File::Spec->file_name_is_absolute($file);
-    };
-    if ($@) {
-        if ($^O eq 'MSWin32') {
-            $r = ($file =~ m;^([a-z]:(/|\\)|\\\\|//);i);
-        } else {
-            $r = ($file =~ m|^/|);
-        }
-    }
-    $r;
-}
-# REPO END
-
 =head1 NAME
 
 tkgvizmakefile - create Tk graphs from Makefiles
