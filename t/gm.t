@@ -8,17 +8,8 @@ use FindBin;
 
 use GraphViz::Makefile;
 use File::Spec::Functions qw(file_name_is_absolute);
-
-BEGIN {
-    if (!eval q{
-        use Test::More;
-        use File::Temp;
-        1;
-    }) {
-        print "1..0 # skip: no Test::More and/or File::Temp modules\n";
-        exit;
-    }
-}
+use Test::More;
+use File::Temp;
 
 my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
 my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
@@ -152,7 +143,6 @@ foo:: howdy buz
 	echo Hey
 EOF
 );
-plan tests => 1 + @makefile_tests * 4;
 
 SKIP: {
     skip("tkgvizmakefile test only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
@@ -198,7 +188,6 @@ SKIP: {
   my $gm = GraphViz::Makefile->new(undef, $makefile_tests[5][0]);
   $gm->generate;
   my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->run(format=>"plain")->dot_output) ];
-
   is_deeply $got_tk, [
     [ qw(configure -scrollregion), [ 0, 0, '375', '450' ] ],
     [ qw(createRectangle 35.415 300 239.585 350 -fill #dddddd) ],
@@ -232,6 +221,8 @@ SKIP: {
     [ qw(createLine 199.86 199.58 207.61 184.51 217.56 165.16 225.28 150.14 -arrow last -smooth 1) ],
   ], 'graphviz2tk' or diag explain $got_tk;
 }
+
+done_testing;
 
 # REPO BEGIN
 # REPO NAME is_in_path /home/e/eserte/work/srezic-repository 
