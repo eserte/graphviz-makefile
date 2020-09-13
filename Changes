@@ -4,6 +4,7 @@
 - deprecate mutating generate method
 - better styling for GraphViz
 - add nodes for recipes too
+- change from GraphViz to GraphViz2 (min Perl now 5.010)
 
 1.18
 	- stable release with changes in 1.17_50 .. 1.17_51

@@ -6,10 +6,8 @@ jobs:
       env: RELEASE_TESTING=1 COVERAGE=1
     - perl: "5.26"
     - perl: "5.22"
-    - perl: "5.16"
     - perl: "5.14"
     - perl: "5.10"
-    - perl: "5.8"
 
 before_install:
  - sudo apt-get update -qq

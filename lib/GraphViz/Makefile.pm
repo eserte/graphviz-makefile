@@ -12,7 +12,7 @@
 #
 
 package GraphViz::Makefile;
-use GraphViz;
+use GraphViz2;
 use Make;
 use strict;
 use warnings;
@@ -60,7 +60,7 @@ sub new {
     bless $self, $pkg;
 }
 
-sub GraphViz { shift->{GraphViz} ||= GraphViz->new }
+sub GraphViz { shift->{GraphViz} ||= GraphViz2->new }
 sub Make     { shift->{Make}     }
 
 sub generate {
@@ -68,13 +68,17 @@ sub generate {
     $target = "all" if !defined $target;
     my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
     my $g = $self->GraphViz;
-    $g->add_node(graphviz_escape($_), %{ $nodes->{$_} }) for sort keys %$nodes;
+    $g->add_node(
+        name => graphviz_protect_name($_),
+        label => graphviz_escape($_),
+        %{ $nodes->{$_} },
+    ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = graphviz_escape($edge_start);
+        my $edge_start_esc = graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            $edge_start_esc,
-            graphviz_escape($_),
+            from => $edge_start_esc,
+            to => graphviz_protect_name($_),
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
@@ -175,7 +179,10 @@ sub find_recursive_makes {
         $f = "$dir/Makefile" if !-r $f;
         my $gm2 = GraphViz::Makefile->new($self->GraphViz, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
         $gm2->generate($rule);
-        $self->GraphViz->add_edge($target_name, "$dir/$rule");
+        $self->GraphViz->add_edge(
+            from => $target_name,
+            to => "$dir/$rule",
+        );
     } else {
         warn "can't match external make command in $cmd\n" if $V;
     }
@@ -218,6 +225,14 @@ sub graphviz_unescape {
         die "Unknown GraphViz escape '$1' in '$text'" unless defined $e;
         $e;
     /gse;
+    $text;
+}
+my @NAME_PROTECT = qw(% : \\);
+my %NAME_MAP = map +($_ => sprintf "%02x", ord), @NAME_PROTECT;
+my $NAME_CHARS = join '|', map quotemeta, grep length, @NAME_PROTECT;
+sub graphviz_protect_name {
+    my ($text) = @_;
+    $text =~ s/($NAME_CHARS)/%$NAME_MAP{$1}/g;
     $text;
 }
 
@@ -271,19 +286,23 @@ Output to a .png file:
 
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
-    my $g = GraphViz->new;
+    my $g = GraphViz2->new;
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node(GraphViz::Makefile::graphviz_escape($_), %{ $nodes->{$_} }) for sort keys %$nodes;
+    $g->add_node(
+        name => GraphViz::Makefile::graphviz_protect_name($_),
+        label => GraphViz::Makefile::graphviz_escape($_),
+        %{ $nodes->{$_} },
+    ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = GraphViz::Makefile::graphviz_escape($edge_start);
+        my $edge_start_esc = GraphViz::Makefile::graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            $edge_start_esc,
-            GraphViz::Makefile::graphviz_escape($_),
+            from => $edge_start_esc,
+            to => GraphViz::Makefile::graphviz_protect_name($_),
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
-    $g->as_png("makefile.png");
+    $g->run(format => "png", output_file => "makefile.png");
 
 To output to a .ps file, just replace C<png> with C<ps> in the filename
 and method above.
@@ -293,11 +312,11 @@ Or, using the deprecated mutation style:
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     $gm->generate("all"); # or another makefile target
-    $gm->GraphViz->as_png("makefile.png");
+    $gm->GraphViz->run(format => "png", output_file => "makefile.png");
 
 =head1 DESCRIPTION
 
-B<GraphViz::Makefile> uses the L<GraphViz> and L<Make> modules to
+B<GraphViz::Makefile> uses the L<GraphViz2> and L<Make> modules to
 visualize Makefile dependencies.
 
 =head2 METHODS
@@ -307,8 +326,7 @@ visualize Makefile dependencies.
 =item new($graphviz, $makefile, $prefix, %args)
 
 Create a C<GraphViz::Makefile> object. The first argument should be a
-C<GraphViz> object or C<undef>. In the latter case, a new C<GraphViz>
-object is created by the constructor. The second argument should be a
+C<GraphViz2> object or C<undef>. The second argument should be a
 C<Make> object, the filename of a Makefile, or C<undef>. In the latter
 case, the default Makefile is used. The third argument C<$prefix> is
 optional and can be used to prepend a prefix to all rule names in the
@@ -330,7 +348,7 @@ arrows point in the direction of "build flow".
 =item generate($rule)
 
 Generate the graph, beginning at the named Makefile rule. If C<$rule>
-is not given, C<all> is used instead. Mutates the internal C<GraphViz>
+is not given, C<all> is used instead. Mutates the internal C<GraphViz2>
 object.
 
 =item find_recursive_makes($target_name, $cmd)
@@ -342,27 +360,31 @@ C<dirname/targetname>.
 =item generate_tree($target)
 
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node(GraphViz::Makefile::graphviz_escape($_), %{ $nodes->{$_} }) for sort keys %$nodes;
+    $g->add_node(
+        name => GraphViz::Makefile::graphviz_protect_name($_),
+        label => GraphViz::Makefile::graphviz_escape($_),
+        %{ $nodes->{$_} },
+    ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = GraphViz::Makefile::graphviz_escape($edge_start);
+        my $edge_start_esc = GraphViz::Makefile::graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            $edge_start_esc,
-            GraphViz::Makefile::graphviz_escape($_),
+            from => $edge_start_esc,
+            to => GraphViz::Makefile::graphviz_protect_name($_),
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
 
 Return a hash-refs of nodes and edges. The values (or second-level
-values for edges) are hash-refs of further arguments for the GraphViz
+values for edges) are hash-refs of further arguments for the GraphViz2
 C<add_node> and C<add_edge> methods respectively.
 
 =item GraphViz
 
-Return a reference to the C<GraphViz> object. This object will be used
+Return a reference to the C<GraphViz2> object. This object will be used
 for the output methods. Will only be created if used. It is recommended
 to instead use the C<generate_tree> method and make the calls on an
-externally-controlled L<GraphViz> object.
+externally-controlled L<GraphViz2> object.
 
 =item Make
 
@@ -375,14 +397,14 @@ Return a reference to the C<Make> object.
 =head2 graphviz2tk
 
     my $c = $w->Subwidget("Graph");
-    for my $m (GraphViz::Makefile::graphviz2tk($graphviz->as_plain)) {
+    for my $m (GraphViz::Makefile::graphviz2tk($graphviz2->run(format=>"plain")->dot_output)) {
         my ($method, @args) = @$m;
         $c->$method(@args);
     }
 
-Given the result of L<GraphViz/as_plain>, returns list of array-refs
-whose first element is a Tk Graph method call, and the rest is
-the arguments.
+Given the result of C<< $graphviz2->run(format=>"plain")->dot_output >>,
+returns list of array-refs whose first element is a Tk Graph method call,
+and the rest is the arguments.
 
 =head2 graphviz_escape
 
@@ -390,6 +412,12 @@ the arguments.
 
 These turn characters considered special by GraphViz into escaped versions,
 and back.
+
+=head2 graphviz_protect_name
+
+Used to map from the meaningful name of a node to something that will
+not be broken by L<GraphViz2/add_edge>'s unfortunate magical treatment
+of node-names.
 
 =head1 ALTERNATIVES
 
@@ -407,6 +435,6 @@ it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<GraphViz>, L<Make>, L<make(1)>, L<tkgvizmakefile>.
+L<GraphViz2>, L<Make>, L<make(1)>, L<tkgvizmakefile>.
 
 =cut

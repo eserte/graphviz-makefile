@@ -170,14 +170,14 @@ for my $def (@makefile_tests) {
     }
     $gm->generate($target);
 
-    my $png = eval { $gm->GraphViz->as_png };
+    my $png = eval { $gm->GraphViz->run(format=>"png")->dot_output };
     SKIP: {
         skip("Cannot create png file: $@", 2)
             if !$png;
 
         my ($fh, $filename) = File::Temp::tempfile(SUFFIX => ".png",
                                               UNLINK => 1);
-        print $fh $gm->GraphViz->as_png;
+        print $fh $png;
         close $fh;
 
         ok(-s $filename, "Non-empty png file for makefile $makefile");
@@ -196,7 +196,8 @@ SKIP: {
   GraphViz::Makefile::_reset_id();
   my $gm = GraphViz::Makefile->new(undef, $makefile_tests[5][0]);
   $gm->generate;
-  my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->as_plain) ];
+  my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->run(format=>"plain")->dot_output) ];
+
   is_deeply $got_tk, [
     [ qw(configure -scrollregion), [ 0, 0, '375', '450' ] ],
     [ qw(createRectangle 35.415 300 239.585 350 -fill #dddddd) ],
@@ -219,15 +220,15 @@ SKIP: {
     [ qw(createText 187.5 225 -text), 'foo', -tag => [ 'rule', 'rule_foo' ] ],
     [ qw(createRectangle 300 0 375 50 -fill #ffff99) ],
     [ qw(createText 337.5 25 -text), 'howdy', -tag => [ 'rule', 'rule_howdy' ] ],
-    [ qw(createLine 125.14 299.58 119.45 288.51 112.57 275.14 106.26 262.87 -arrow last -smooth 1) ],
-    [ qw(createLine 149.86 299.58 155.55 288.51 162.43 275.14 168.74 262.87 -arrow last -smooth 1) ],
-    [ qw(createLine 112.78 99.579 100.55 87.688 85.58 73.134 72.221 60.145 -arrow last -smooth 1) ],
-    [ qw(createLine 137.5 99.579 137.5 88.865 137.5 75.99 137.5 64.045 -arrow last -smooth 1) ],
-    [ qw(createLine 237.5 99.579 237.5 88.865 237.5 75.99 237.5 64.045 -arrow last -smooth 1) ],
-    [ qw(createLine 262.22 99.579 274.45 87.688 289.42 73.134 302.78 60.145 -arrow last -smooth 1) ],
-    [ qw(createLine 137.5 399.58 137.5 388.86 137.5 375.99 137.5 364.05 -arrow last -smooth 1) ],
-    [ qw(createLine 175.14 199.58 169.45 188.51 162.57 175.14 156.26 162.87 -arrow last -smooth 1) ],
-    [ qw(createLine 199.86 199.58 205.55 188.51 212.43 175.14 218.74 162.87 -arrow last -smooth 1) ],
+    [ qw(createLine 125.14 299.58 117.39 284.51 107.44 265.16 99.717 250.14 -arrow last -smooth 1) ],
+    [ qw(createLine 149.86 299.58 157.61 284.51 167.56 265.16 175.28 250.14 -arrow last -smooth 1) ],
+    [ qw(createLine 112.78 99.579 97.28 84.509 77.381 65.162 61.935 50.145 -arrow last -smooth 1) ],
+    [ qw(createLine 137.5 99.579 137.5 84.509 137.5 65.162 137.5 50.145 -arrow last -smooth 1) ],
+    [ qw(createLine 237.5 99.579 237.5 84.509 237.5 65.162 237.5 50.145 -arrow last -smooth 1) ],
+    [ qw(createLine 262.22 99.579 277.72 84.509 297.62 65.162 313.07 50.145 -arrow last -smooth 1) ],
+    [ qw(createLine 137.5 399.58 137.5 384.51 137.5 365.16 137.5 350.14 -arrow last -smooth 1) ],
+    [ qw(createLine 175.14 199.58 167.39 184.51 157.44 165.16 149.72 150.14 -arrow last -smooth 1) ],
+    [ qw(createLine 199.86 199.58 207.61 184.51 217.56 165.16 225.28 150.14 -arrow last -smooth 1) ],
   ], 'graphviz2tk' or diag explain $got_tk;
 }
 
