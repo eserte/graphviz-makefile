@@ -7,6 +7,7 @@ use strict;
 use FindBin;
 
 use GraphViz::Makefile;
+use File::Spec::Functions qw(file_name_is_absolute);
 
 BEGIN {
     if (!eval q{
@@ -231,38 +232,6 @@ SKIP: {
     [ qw(createLine 199.86 199.58 207.61 184.51 217.56 165.16 225.28 150.14 -arrow last -smooth 1) ],
   ], 'graphviz2tk' or diag explain $got_tk;
 }
-
-######################################################################
-# REPO BEGIN
-# REPO NAME file_name_is_absolute /home/e/eserte/work/srezic-repository 
-# REPO MD5 89d0fdf16d11771f0f6e82c7d0ebf3a8
-
-=head2 file_name_is_absolute($file)
-
-=for category File
-
-Return true, if supplied file name is absolute. This is only necessary
-for older perls where File::Spec is not part of the system.
-
-=cut
-
-BEGIN {
-    if (eval { require File::Spec; defined &File::Spec::file_name_is_absolute }) {
-        *file_name_is_absolute = \&File::Spec::file_name_is_absolute;
-    } else {
-        *file_name_is_absolute = sub {
-            my $file = shift;
-            my $r;
-            if ($^O eq 'MSWin32') {
-                $r = ($file =~ m;^([a-z]:(/|\\)|\\\\|//);i);
-            } else {
-                $r = ($file =~ m|^/|);
-            }
-            $r;
-        };
-    }
-}
-# REPO END
 
 # REPO BEGIN
 # REPO NAME is_in_path /home/e/eserte/work/srezic-repository 
