@@ -156,7 +156,7 @@ plan tests => 1 + @makefile_tests * 4;
 SKIP: {
     skip("tkgvizmakefile test only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
     system("$^X", "-Mblib", "blib/script/tkgvizmakefile", "-reversed", "-prefix", "test-");
-    pass("Run tkgvizmakefile ...");
+    is $?, 0, "Run tkgvizmakefile";
 }
 
 for my $def (@makefile_tests) {

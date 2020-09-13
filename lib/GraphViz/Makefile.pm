@@ -68,10 +68,15 @@ sub generate {
     $target = "all" if !defined $target;
     my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
     my $g = $self->GraphViz;
-    $g->add_node($_, %{ $nodes->{$_} }) for sort keys %$nodes;
+    $g->add_node(graphviz_escape($_), %{ $nodes->{$_} }) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
+        my $edge_start_esc = graphviz_escape($edge_start);
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for sort keys %$sub_edges;
+        $g->add_edge(
+            $edge_start_esc,
+            graphviz_escape($_),
+            %{ $sub_edges->{$_} },
+        ) for keys %$sub_edges;
     }
 }
 
@@ -192,9 +197,30 @@ sub _rules_merge {
 }
 
 my %GRAPHVIZ_ESCAPE = (
-  l => "\n", "\n" => "",
+  "\n" => "n",
   map +($_ => $_), qw({ } " \\ < > [ ]),
 );
+my $GRAPHVIZ_ESCAPE_CHARS = join '|',
+    map quotemeta, grep length, sort keys %GRAPHVIZ_ESCAPE;
+my %GRAPHVIZ_UNESCAPE = (
+  reverse(%GRAPHVIZ_ESCAPE),
+  l => "\n", "\n" => "",
+);
+sub graphviz_escape {
+    my ($text) = @_;
+    $text =~ s/($GRAPHVIZ_ESCAPE_CHARS)/\\$GRAPHVIZ_ESCAPE{$1}/gs;
+    $text;
+}
+sub graphviz_unescape {
+    my ($text) = @_;
+    $text =~ s/\\(.)/
+        my $e = $GRAPHVIZ_UNESCAPE{$1};
+        die "Unknown GraphViz escape '$1' in '$text'" unless defined $e;
+        $e;
+    /gse;
+    $text;
+}
+
 sub graphviz2tk {
     my($text) = @_;
     require Text::ParseWords;
@@ -213,11 +239,7 @@ sub graphviz2tk {
             my $method = 'create' . ($shape =~ /^(box|note)$/ ? 'Rectangle' : 'Oval');
             push @methods, [ $method, $x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor ];
             $label =~ s/\A"(.*)"\z/$1/gs;
-            $label =~ s/\\(.)/
-              my $e = $GRAPHVIZ_ESCAPE{$1};
-              die "Unknown GraphViz escape '$1' in '$label'" unless defined $e;
-              $e;
-            /gse;
+            $label = graphviz_unescape($label);
             chomp $label;
             push @methods, [ 'createText', $x,$y,-text => $label, -tag => ["rule","rule_$label"] ];
         } elsif ($type eq 'edge') {
@@ -251,10 +273,15 @@ Output to a .png file:
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     my $g = GraphViz->new;
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node($_, %{ $nodes->{$_} }) for sort keys %$nodes;
+    $g->add_node(GraphViz::Makefile::graphviz_escape($_), %{ $nodes->{$_} }) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
+        my $edge_start_esc = GraphViz::Makefile::graphviz_escape($edge_start);
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for sort keys %$sub_edges;
+        $g->add_edge(
+            $edge_start_esc,
+            GraphViz::Makefile::graphviz_escape($_),
+            %{ $sub_edges->{$_} },
+        ) for keys %$sub_edges;
     }
     $g->as_png("makefile.png");
 
@@ -315,10 +342,15 @@ C<dirname/targetname>.
 =item generate_tree($target)
 
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
-    $g->add_node($_, %{ $nodes->{$_} }) for sort keys %$nodes;
+    $g->add_node(GraphViz::Makefile::graphviz_escape($_), %{ $nodes->{$_} }) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
+        my $edge_start_esc = GraphViz::Makefile::graphviz_escape($edge_start);
         my $sub_edges = $edges->{$edge_start};
-        $g->add_edge($edge_start, $_, %{ $sub_edges->{$_} }) for sort keys %$sub_edges;
+        $g->add_edge(
+            $edge_start_esc,
+            GraphViz::Makefile::graphviz_escape($_),
+            %{ $sub_edges->{$_} },
+        ) for keys %$sub_edges;
     }
 
 Return a hash-refs of nodes and edges. The values (or second-level
@@ -351,6 +383,13 @@ Return a reference to the C<Make> object.
 Given the result of L<GraphViz/as_plain>, returns list of array-refs
 whose first element is a Tk Graph method call, and the rest is
 the arguments.
+
+=head2 graphviz_escape
+
+=head2 graphviz_unescape
+
+These turn characters considered special by GraphViz into escaped versions,
+and back.
 
 =head1 ALTERNATIVES
 
