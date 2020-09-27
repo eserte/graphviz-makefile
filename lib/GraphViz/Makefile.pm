@@ -95,6 +95,14 @@ sub _reset_id {
     $id_counter = 0;
 }
 
+sub _add_edge {
+    my ($edges, $from, $to, $reversed) = @_;
+    my @edge = ($from, $to);
+    @edge = reverse @edge if $reversed;
+    $edges->{$edge[0]}{$edge[1]} ||= {};
+    warn "$edge[0] => $edge[1]\n" if $V >= 2;
+}
+
 # mutates $nodes and $edges
 sub generate_tree {
     my ($self, $target, $visited, $nodes, $edges) = @_;
@@ -124,16 +132,10 @@ sub generate_tree {
             s/"/\\"/g for @recipe_lines;
             my $recipe_label = join '', map "$_\\l", @recipe_lines;
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
-            my @recipe_edge = ($prefix.$target, $recipe_id);
-            @recipe_edge = reverse @recipe_edge if $self->{reversed};
-            $edges->{$recipe_edge[0]}{$recipe_edge[1]} ||= {};
-            warn "$recipe_edge[0] => $recipe_edge[1]\n" if $V >= 2;
+            _add_edge($edges, $prefix.$target, $recipe_id, $self->{reversed});
             for my $dep (@{ $recipe_rule->{prereqs} }) {
                 $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-                my @edge = ($recipe_id, $prefix.$dep);
-                @edge = reverse @edge if $self->{reversed};
-                $edges->{$edge[0]}{$edge[1]} ||= {};
-                warn "$edge[0] => $edge[1]\n" if $V >= 2;
+                _add_edge($edges, $recipe_id, $prefix.$dep, $self->{reversed});
                 $to_visit{$dep}++;
             }
         }
@@ -141,10 +143,7 @@ sub generate_tree {
         for my $bare_rule (@$bare_rules) {
             for my $dep (@{ $bare_rule->prereqs }) {
                 $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-                my @edge = ($prefix.$target, $prefix.$dep);
-                @edge = reverse @edge if $self->{reversed};
-                $edges->{$edge[0]}{$edge[1]} ||= {};
-                warn "$edge[0] => $edge[1]\n" if $V >= 2;
+                _add_edge($edges, $prefix.$target, $prefix.$dep, $self->{reversed});
                 $to_visit{$dep}++;
             }
         }
