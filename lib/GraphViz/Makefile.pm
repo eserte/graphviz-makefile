@@ -103,6 +103,14 @@ sub _add_edge {
     warn "$edge[0] => $edge[1]\n" if $V >= 2;
 }
 
+my %CHR2ENCODE = ("\\" => '\\\\', '"' => '\\"', "\n" => "\\l");
+my $CHR_PAT = join '|', map quotemeta, sort keys %CHR2ENCODE;
+sub _recipe2label {
+    my ($recipe) = @_;
+    $recipe =~ s/($CHR_PAT)/$CHR2ENCODE{$1}/g;
+    $recipe;
+}
+
 # mutates $nodes and $edges
 sub generate_tree {
     my ($self, $target, $visited, $nodes, $edges) = @_;
@@ -127,10 +135,7 @@ sub generate_tree {
     if (@merged_rules) {
         for my $recipe_rule (@merged_rules) {
             my $recipe_id = _gen_id($recipe_rule->{recipe});
-            my @recipe_lines = @{ $recipe_rule->{recipe} };
-            s/\\/\\\\/g for @recipe_lines;
-            s/"/\\"/g for @recipe_lines;
-            my $recipe_label = join '', map "$_\\l", @recipe_lines;
+            my $recipe_label = _recipe2label(join '', map "$_\n", @{ $recipe_rule->{recipe} });
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
             _add_edge($edges, $prefix.$target, $recipe_id, $self->{reversed});
             for my $dep (@{ $recipe_rule->{prereqs} }) {
