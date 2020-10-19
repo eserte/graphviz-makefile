@@ -212,7 +212,7 @@ my %GRAPHVIZ_ESCAPE = (
   map +($_ => $_), qw({ } " \\ < > [ ]),
 );
 my $GRAPHVIZ_ESCAPE_CHARS = join '|',
-    map quotemeta, grep length, sort keys %GRAPHVIZ_ESCAPE;
+    map quotemeta, sort keys %GRAPHVIZ_ESCAPE;
 my %GRAPHVIZ_UNESCAPE = (
   reverse(%GRAPHVIZ_ESCAPE),
   l => "\n", "\n" => "",
