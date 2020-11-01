@@ -1,11 +1,12 @@
 Changes
 lib/GraphViz/Makefile.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 MANIFEST.SKIP
 README
 scripts/tkgvizmakefile
 t/gm.t
+t/snapshots/gm_t/graphviz2tk
 xt/manifest.t
 xt/pod-coverage.t
 xt/pod.t

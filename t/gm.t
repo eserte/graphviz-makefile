@@ -1,15 +1,15 @@
-#!/usr/bin/perl -w
 # -*- perl -*-
 
 # Author: Slaven Rezic
 
 use strict;
+use warnings;
 use FindBin;
 
 use GraphViz::Makefile;
 use File::Spec::Functions qw(file_name_is_absolute);
 use Test::More;
-use File::Temp;
+use Test::Snapshot;
 
 my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
 my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
@@ -166,6 +166,7 @@ for my $def (@makefile_tests) {
         skip("Cannot create png file: $@", 2)
             if !$png;
 
+        require File::Temp;
         my ($fh, $filename) = File::Temp::tempfile(SUFFIX => ".png",
                                               UNLINK => 1);
         print $fh $png;
@@ -188,38 +189,7 @@ SKIP: {
   my $gm = GraphViz::Makefile->new(undef, $makefile_tests[5][0]);
   $gm->generate;
   my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->run(format=>"plain")->dot_output) ];
-  is_deeply $got_tk, [
-    [ qw(configure -scrollregion), [ 0, 0, '375', '450' ] ],
-    [ qw(createRectangle 35.415 300 239.585 350 -fill #dddddd) ],
-    [ qw(createText 137.5 325 -text), 'echo hallo perl\\lib double\\\\l', -tag => [ 'rule', 'rule_echo hallo perl\\lib double\\\\l' ] ],
-    [ qw(createRectangle 100 100 175 150 -fill #dddddd) ],
-    [ qw(createText 137.5 125 -text), 'echo Hi', -tag => [ 'rule', 'rule_echo Hi' ] ],
-    [ qw(createRectangle 200 100 275 150 -fill #dddddd) ],
-    [ qw(createText 237.5 125 -text), 'echo Hey', -tag => [ 'rule', 'rule_echo Hey' ] ],
-    [ qw(createRectangle 100 400 175 450 -fill #ffff99) ],
-    [ qw(createText 137.5 425 -text), 'all', -tag => [ 'rule', 'rule_all' ] ],
-    [ qw(createRectangle 50 200 125 250 -fill #ffff99) ],
-    [ qw(createText 87.5 225 -text), 'bar', -tag => [ 'rule', 'rule_bar' ] ],
-    [ qw(createRectangle 0 0 75 50 -fill #ffff99) ],
-    [ qw(createText 37.5 25 -text), 'blah', -tag => [ 'rule', 'rule_blah' ] ],
-    [ qw(createRectangle 100 0 175 50 -fill #ffff99) ],
-    [ qw(createText 137.5 25 -text), 'boo', -tag => [ 'rule', 'rule_boo' ] ],
-    [ qw(createRectangle 200 0 275 50 -fill #ffff99) ],
-    [ qw(createText 237.5 25 -text), 'buz', -tag => [ 'rule', 'rule_buz' ] ],
-    [ qw(createRectangle 150 200 225 250 -fill #ffff99) ],
-    [ qw(createText 187.5 225 -text), 'foo', -tag => [ 'rule', 'rule_foo' ] ],
-    [ qw(createRectangle 300 0 375 50 -fill #ffff99) ],
-    [ qw(createText 337.5 25 -text), 'howdy', -tag => [ 'rule', 'rule_howdy' ] ],
-    [ qw(createLine 125.14 299.58 117.39 284.51 107.44 265.16 99.717 250.14 -arrow last -smooth 1) ],
-    [ qw(createLine 149.86 299.58 157.61 284.51 167.56 265.16 175.28 250.14 -arrow last -smooth 1) ],
-    [ qw(createLine 112.78 99.579 97.28 84.509 77.381 65.162 61.935 50.145 -arrow last -smooth 1) ],
-    [ qw(createLine 137.5 99.579 137.5 84.509 137.5 65.162 137.5 50.145 -arrow last -smooth 1) ],
-    [ qw(createLine 237.5 99.579 237.5 84.509 237.5 65.162 237.5 50.145 -arrow last -smooth 1) ],
-    [ qw(createLine 262.22 99.579 277.72 84.509 297.62 65.162 313.07 50.145 -arrow last -smooth 1) ],
-    [ qw(createLine 137.5 399.58 137.5 384.51 137.5 365.16 137.5 350.14 -arrow last -smooth 1) ],
-    [ qw(createLine 175.14 199.58 167.39 184.51 157.44 165.16 149.72 150.14 -arrow last -smooth 1) ],
-    [ qw(createLine 199.86 199.58 207.61 184.51 217.56 165.16 225.28 150.14 -arrow last -smooth 1) ],
-  ], 'graphviz2tk' or diag explain $got_tk;
+  is_deeply_snapshot $got_tk, 'graphviz2tk';
 }
 
 done_testing;

@@ -19,6 +19,10 @@ WriteMakefile(
     VERSION_FROM	=> 'lib/GraphViz/Makefile.pm', # finds $VERSION
     EXE_FILES		=> [ glob 'scripts/*' ],
     PREREQ_PM		=> {'GraphViz2' => 0, 'Make' => '2.002'},
+    TEST_REQUIRES => {
+        'Test::More' => '1.001002',
+        'Test::Snapshot' => '0.06',
+    },
     LICENSE	      => 'perl',
     MIN_PERL_VERSION => '5.010', # GraphViz2
     ABSTRACT_FROM  => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
