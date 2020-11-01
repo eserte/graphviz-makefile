@@ -31,7 +31,7 @@ our %NodeStyleTarget = (
     fontsize  => 10,
 );
 our %NodeStyleRecipe = (
-    shape     => 'note',
+    shape     => 'record',
     style     => 'filled',
     fillcolor => '#dddddd',
     fontname  => 'Monospace',
@@ -60,7 +60,7 @@ sub new {
     bless $self, $pkg;
 }
 
-sub GraphViz { shift->{GraphViz} ||= GraphViz2->new }
+sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(global => {combine_node_and_port => 0}) }
 sub Make     { shift->{Make}     }
 
 sub generate {
@@ -69,16 +69,15 @@ sub generate {
     my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
     my $g = $self->GraphViz;
     $g->add_node(
-        name => graphviz_protect_name($_),
+        name => $_,
         label => graphviz_escape($_),
         %{ $nodes->{$_} },
     ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            from => $edge_start_esc,
-            to => graphviz_protect_name($_),
+            from => $edge_start,
+            to => $_,
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
@@ -103,12 +102,15 @@ sub _add_edge {
     warn "$edge[0] => $edge[1]\n" if $V >= 2;
 }
 
-my %CHR2ENCODE = ("\\" => '\\\\', '"' => '\\"', "\n" => "\\l");
+my %CHR2ENCODE = ("\\" => '\\\\');
 my $CHR_PAT = join '|', map quotemeta, sort keys %CHR2ENCODE;
 sub _recipe2label {
     my ($recipe) = @_;
-    $recipe =~ s/($CHR_PAT)/$CHR2ENCODE{$1}/g;
-    $recipe;
+    [
+        [ map {
+            my $t = $_; $t =~ s/($CHR_PAT)/$CHR2ENCODE{$1}/g; "$t\\l";
+        } @$recipe ]
+    ];
 }
 
 # mutates $nodes and $edges
@@ -135,7 +137,7 @@ sub generate_tree {
     if (@merged_rules) {
         for my $recipe_rule (@merged_rules) {
             my $recipe_id = _gen_id($recipe_rule->{recipe});
-            my $recipe_label = _recipe2label(join '', map "$_\n", @{ $recipe_rule->{recipe} });
+            my $recipe_label = _recipe2label($recipe_rule->{recipe});
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
             _add_edge($edges, $prefix.$target, $recipe_id, $self->{reversed});
             for my $dep (@{ $recipe_rule->{prereqs} }) {
@@ -217,26 +219,31 @@ my %GRAPHVIZ_UNESCAPE = (
   reverse(%GRAPHVIZ_ESCAPE),
   l => "\n", "\n" => "",
 );
+my %GRAPHVIZ_RECORD_UNESCAPE = (
+  '{' => [ '^\{' ],
+  '}' => [ '\}$' ],
+  '\\l}' => [ '\\\\l\}' ],
+  '\\l|' => [ '\\\\l\|', "\n" ],
+  '|' => [ '\|', "\n" ],
+  '' => [ '<[^>]+>\s*' ],
+);
+my $GRAPHVIZ_RECORD_UNESCAPE_CHARS = join '|',
+    map $GRAPHVIZ_RECORD_UNESCAPE{$_}[0], sort keys %GRAPHVIZ_RECORD_UNESCAPE;
 sub graphviz_escape {
     my ($text) = @_;
     $text =~ s/($GRAPHVIZ_ESCAPE_CHARS)/\\$GRAPHVIZ_ESCAPE{$1}/gs;
     $text;
 }
 sub graphviz_unescape {
-    my ($text) = @_;
-    $text =~ s/\\(.)/
-        my $e = $GRAPHVIZ_UNESCAPE{$1};
-        die "Unknown GraphViz escape '$1' in '$text'" unless defined $e;
-        $e;
+    my ($text, $shape) = @_;
+    my $record_pat = $shape eq 'record' ? $GRAPHVIZ_RECORD_UNESCAPE_CHARS : '';
+    $text =~ s/($record_pat)|\\(.)/
+        $2 ? do {
+            my $e = $GRAPHVIZ_UNESCAPE{$2};
+            die "Unknown GraphViz escape '$2' in '$text'" unless defined $e;
+            $e;
+        } : $1 ? $GRAPHVIZ_RECORD_UNESCAPE{$1}[1] || '' : ''
     /gse;
-    $text;
-}
-my @NAME_PROTECT = qw(% : \\);
-my %NAME_MAP = map +($_ => sprintf "%02x", ord), @NAME_PROTECT;
-my $NAME_CHARS = join '|', map quotemeta, grep length, @NAME_PROTECT;
-sub graphviz_protect_name {
-    my ($text) = @_;
-    $text =~ s/($NAME_CHARS)/%$NAME_MAP{$1}/g;
     $text;
 }
 
@@ -255,10 +262,10 @@ sub graphviz2tk {
             my ($name, $x, $y, $width, $height, $label, $style, $shape, $color, $fillcolor) = @w;
             ($x,$y) = $tfm->($x, $y);
             ($width,$height) = $tfm->($width, $height);
-            my $method = 'create' . ($shape =~ /^(box|note)$/ ? 'Rectangle' : 'Oval');
+            my $method = 'create' . ($shape =~ /^(box|record)$/ ? 'Rectangle' : 'Oval');
             push @methods, [ $method, $x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor ];
             $label =~ s/\A"(.*)"\z/$1/gs;
-            $label = graphviz_unescape($label);
+            $label = graphviz_unescape($label, $shape);
             chomp $label;
             push @methods, [ 'createText', $x,$y,-text => $label, -tag => ["rule","rule_$label"] ];
         } elsif ($type eq 'edge') {
@@ -290,19 +297,18 @@ Output to a .png file:
 
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
-    my $g = GraphViz2->new;
+    my $g = GraphViz2->new(global => {combine_node_and_port => 0});
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
     $g->add_node(
-        name => GraphViz::Makefile::graphviz_protect_name($_),
+        name => $_,
         label => GraphViz::Makefile::graphviz_escape($_),
         %{ $nodes->{$_} },
     ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = GraphViz::Makefile::graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            from => $edge_start_esc,
-            to => GraphViz::Makefile::graphviz_protect_name($_),
+            from => $edge_start,
+            to => $_,
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
@@ -365,16 +371,15 @@ C<dirname/targetname>.
 
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
     $g->add_node(
-        name => GraphViz::Makefile::graphviz_protect_name($_),
+        name => $_,
         label => GraphViz::Makefile::graphviz_escape($_),
         %{ $nodes->{$_} },
     ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = GraphViz::Makefile::graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            from => $edge_start_esc,
-            to => GraphViz::Makefile::graphviz_protect_name($_),
+            from => $edge_start,
+            to => $_,
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
@@ -416,12 +421,6 @@ and the rest is the arguments.
 
 These turn characters considered special by GraphViz into escaped versions,
 and back.
-
-=head2 graphviz_protect_name
-
-Used to map from the meaningful name of a node to something that will
-not be broken by L<GraphViz2/add_edge>'s unfortunate magical treatment
-of node-names.
 
 =head1 ALTERNATIVES
 

@@ -87,19 +87,18 @@ if ($outputtype eq 'tkcanvas') {
 sub generate_graphviz {
     my($file, $rule, $prefix, $gm_args) = @_;
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
-    my $g = GraphViz2->new;
+    my $g = GraphViz2->new(global => { combine_node_and_port => 0 });
     my ($nodes, $edges) = $gm->generate_tree($rule);
     $g->add_node(
-        name => GraphViz::Makefile::graphviz_protect_name($_),
+        name => $_,
         label => GraphViz::Makefile::graphviz_escape($_),
         %{ $nodes->{$_} },
     ) for sort keys %$nodes;
     for my $edge_start (sort keys %$edges) {
-        my $edge_start_esc = GraphViz::Makefile::graphviz_protect_name($edge_start);
         my $sub_edges = $edges->{$edge_start};
         $g->add_edge(
-            from => $edge_start_esc,
-            to => GraphViz::Makefile::graphviz_protect_name($_),
+            from => $edge_start,
+            to => $_,
             %{ $sub_edges->{$_} },
         ) for keys %$sub_edges;
     }
