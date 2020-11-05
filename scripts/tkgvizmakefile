@@ -74,8 +74,8 @@ if (!GetOptions("f|file=s" => \$file,
     Pod::Usage::pod2usage(1);
 }
 my $rule = shift || "all";
-my $gm_args = { reversed => $reversed };
-my $graphviz = generate_graphviz($file, $rule, $prefix, $gm_args);
+my $gm_args = {};
+my $graphviz = generate_graphviz($file, $rule, $prefix, $reversed, $gm_args);
 
 if ($outputtype eq 'tkcanvas') {
     tkcanvas_output($rule, $graphviz, $prefix, $gm_args);
@@ -85,9 +85,12 @@ if ($outputtype eq 'tkcanvas') {
 }
 
 sub generate_graphviz {
-    my($file, $rule, $prefix, $gm_args) = @_;
+    my($file, $rule, $prefix, $reversed, $gm_args) = @_;
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
-    my $g = GraphViz2->new(global => { combine_node_and_port => 0 });
+    my $g = GraphViz2->new(
+        $reversed ? (edge => { dir => 'back' }, graph => { rankdir => 'BT' }) : (),
+        global => { combine_node_and_port => 0 }
+    );
     my ($nodes, $edges) = $gm->generate_tree($rule);
     $g->add_node(
         name => $_,
