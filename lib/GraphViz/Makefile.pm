@@ -112,6 +112,16 @@ sub _recipe2label {
     ];
 }
 
+# mutates $nodes and $edges and $to_visit
+sub _node2deps {
+    my ($prefix, $target, $deps, $nodes, $edges, $to_visit) = @_;
+    for my $dep (@$deps) {
+        $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
+        _add_edge($edges, $target, $prefix.$dep);
+        $to_visit->{$dep}++;
+    }
+}
+
 # mutates $nodes and $edges
 sub generate_tree {
     my ($self, $target, $visited, $nodes, $edges) = @_;
@@ -139,20 +149,14 @@ sub generate_tree {
             my $recipe_label = _recipe2label($recipe_rule->{recipe});
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
             _add_edge($edges, $prefix.$target, $recipe_id);
-            for my $dep (@{ $recipe_rule->{prereqs} }) {
-                $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-                _add_edge($edges, $recipe_id, $prefix.$dep);
-                $to_visit{$dep}++;
-            }
+            _node2deps(
+                $prefix, $recipe_id, $recipe_rule->{prereqs}, $nodes, $edges, \%to_visit,
+            );
         }
     } else {
-        for my $bare_rule (@$bare_rules) {
-            for my $dep (@{ $bare_rule->prereqs }) {
-                $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-                _add_edge($edges, $prefix.$target, $prefix.$dep);
-                $to_visit{$dep}++;
-            }
-        }
+        _node2deps(
+            $prefix, $prefix.$target, $_->prereqs, $nodes, $edges, \%to_visit,
+        ) for @$bare_rules;
     }
     $self->generate_tree($_, $visited, $nodes, $edges) for sort keys %to_visit;
     ($nodes, $edges);
