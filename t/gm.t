@@ -28,15 +28,6 @@ my $model_expected = [
     ':recipe:2' => { 'otherfile' => {} },
   },
 ];
-my $modelrev_expected = [
-  $model_expected->[0],
-  {
-    ':recipe:1' => { model => {} },
-    ':recipe:2' => { 'data/features.tab' => {} },
-    'data/features.tab' => { ':recipe:1' => {} },
-    'otherfile' => { ':recipe:2' => {} },
-  },
-];
 my $modelprefix_expected = [
   {
     testmodel => $node_target,
@@ -111,7 +102,6 @@ data/features.tab: otherfile
 	perl prog3.pl $< > $@
 EOF
     [\$make_subst, "model", '', {}, $model_expected],
-    [\$make_subst, "model", '', { reversed => 1 }, $modelrev_expected],
     [\$make_subst, "model", 'test', {}, $modelprefix_expected],
     [\<<'EOF', "all", '', {}, $mgv_expected],
 all: foo

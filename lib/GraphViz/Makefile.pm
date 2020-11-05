@@ -20,7 +20,7 @@ use warnings;
 our $VERSION = '1.18';
 
 our $V = 0 unless defined $V;
-my @ALLOWED_ARGS = qw(reversed);
+my @ALLOWED_ARGS = qw();
 my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
 
 our %NodeStyleTarget = (
@@ -95,9 +95,8 @@ sub _reset_id {
 }
 
 sub _add_edge {
-    my ($edges, $from, $to, $reversed) = @_;
+    my ($edges, $from, $to) = @_;
     my @edge = ($from, $to);
-    @edge = reverse @edge if $reversed;
     $edges->{$edge[0]}{$edge[1]} ||= {};
     warn "$edge[0] => $edge[1]\n" if $V >= 2;
 }
@@ -139,10 +138,10 @@ sub generate_tree {
             my $recipe_id = _gen_id($recipe_rule->{recipe});
             my $recipe_label = _recipe2label($recipe_rule->{recipe});
             $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
-            _add_edge($edges, $prefix.$target, $recipe_id, $self->{reversed});
+            _add_edge($edges, $prefix.$target, $recipe_id);
             for my $dep (@{ $recipe_rule->{prereqs} }) {
                 $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-                _add_edge($edges, $recipe_id, $prefix.$dep, $self->{reversed});
+                _add_edge($edges, $recipe_id, $prefix.$dep);
                 $to_visit{$dep}++;
             }
         }
@@ -150,7 +149,7 @@ sub generate_tree {
         for my $bare_rule (@$bare_rules) {
             for my $dep (@{ $bare_rule->prereqs }) {
                 $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-                _add_edge($edges, $prefix.$target, $prefix.$dep, $self->{reversed});
+                _add_edge($edges, $prefix.$target, $prefix.$dep);
                 $to_visit{$dep}++;
             }
         }
@@ -345,16 +344,7 @@ graph output.
 
 The created nodes are named C<rule_$prefix$name>.
 
-Further arguments (specified as key-value pairs):
-
-=over
-
-=item reversed => 1
-
-Point arrows in the direction of dependencies. If not set, then the
-arrows point in the direction of "build flow".
-
-=back
+Further arguments (specified as key-value pairs): none at present.
 
 =item generate($rule)
 
