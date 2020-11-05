@@ -13,76 +13,6 @@ use Test::Snapshot;
 
 my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
 my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
-my $model_expected = [
-  {
-    model => $node_target,
-    'data/features.tab' => $node_target,
-    otherfile => $node_target,
-    ':recipe:1' => { %$node_recipe, label => [ [ 'perl prog1.pl $<\\l' ] ] },
-    ':recipe:2' => { %$node_recipe, label => [ [ 'perl prog3.pl $< > $@\\l' ] ] },
-  },
-  {
-    model => { ':recipe:1' => {} },
-    'data/features.tab' => { ':recipe:2' => {} },
-    ':recipe:1' => { 'data/features.tab' => {} },
-    ':recipe:2' => { 'otherfile' => {} },
-  },
-];
-my $modelprefix_expected = [
-  {
-    testmodel => $node_target,
-    'testdata/features.tab' => $node_target,
-    testotherfile => $node_target,
-    ':recipe:1' => { %$node_recipe, label => [ [ 'perl prog1.pl $<\\l' ] ] },
-    ':recipe:2' => { %$node_recipe, label => [ [ 'perl prog3.pl $< > $@\\l' ] ] },
-  },
-  {
-    testmodel => { ':recipe:1' => {} },
-    'testdata/features.tab' => { ':recipe:2' => {} },
-    ':recipe:1' => { 'testdata/features.tab' => {} },
-    ':recipe:2' => { 'testotherfile' => {} },
-  },
-];
-my $mgv_expected = [
-  {
-    all => $node_target,
-    foo => $node_target,
-    bar => $node_target,
-    blah => $node_target,
-    boo => $node_target,
-    howdy => $node_target,
-    buz => $node_target,
-    ':recipe:1' => { %$node_recipe, label => [ [ 'echo hallo perl\\\\lib double\\\\\\\\l\\l' ] ] },
-    ':recipe:2' => { %$node_recipe, label => [ [ 'echo Hi\\l' ] ] },
-    ':recipe:3' => { %$node_recipe, label => [ [ 'echo Hey\\l' ] ] },
-  },
-  {
-    all => { ':recipe:1' => {} },
-    ':recipe:1' => { 'bar' => {}, 'foo' => {} },
-    foo => { ':recipe:2' => {}, ':recipe:3' => {} },
-    ':recipe:2' => { 'blah' => {}, 'boo' => {} },
-    ':recipe:3' => { 'buz' => {}, 'howdy' => {} },
-  },
-];
-my $mgvnorecipe_expected = [
-  {
-    all => $node_target,
-    foo => $node_target,
-    bar => $node_target,
-    blah => $node_target,
-    boo => $node_target,
-    howdy => $node_target,
-    buz => $node_target,
-    ':recipe:1' => { %$node_recipe, label => [ [ 'echo Hi\\l' ] ] },
-    ':recipe:2' => { %$node_recipe, label => [ [ 'echo Hey\\l' ] ] },
-  },
-  {
-    all => { 'bar' => {}, 'foo' => {} },
-    foo => { ':recipe:1' => {}, ':recipe:2' => {} },
-    ':recipe:1' => { 'blah' => {}, 'boo' => {} },
-    ':recipe:2' => { 'buz' => {}, 'howdy' => {} },
-  },
-];
 my $make_subst = <<'EOF';
 DATA=data
 
@@ -94,16 +24,16 @@ $(DATA)/features.tab: otherfile
 EOF
 my @makefile_tests = (
     ["$FindBin::RealBin/../Makefile", "all", '', {}, undef],
-    [\<<'EOF', "model", '', {}, $model_expected],
+    [\<<'EOF', "model", '', {}, 'model_expected'],
 model: data/features.tab
 	perl prog1.pl $<
 
 data/features.tab: otherfile
 	perl prog3.pl $< > $@
 EOF
-    [\$make_subst, "model", '', {}, $model_expected],
-    [\$make_subst, "model", 'test', {}, $modelprefix_expected],
-    [\<<'EOF', "all", '', {}, $mgv_expected],
+    [\$make_subst, "model", '', {}, 'model_expected'],
+    [\$make_subst, "model", 'test', {}, 'modelprefix_expected'],
+    [\<<'EOF', "all", '', {}, 'mgv_expected'],
 all: foo
 all: bar
 	echo hallo perl\lib double\\l
@@ -118,7 +48,7 @@ foo:: blah boo
 foo:: howdy buz
 	echo Hey
 EOF
-    [\<<'EOF', "all", '', {}, $mgvnorecipe_expected],
+    [\<<'EOF', "all", '', {}, 'mgvnorecipe_expected'],
 all: foo
 all: bar
 
@@ -147,7 +77,7 @@ for my $def (@makefile_tests) {
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {
         my $got = [ $gm->generate_tree($target) ];
-        is_deeply $got, $expected, 'generate_tree' or diag explain $got;
+        is_deeply_snapshot $got, $expected or diag explain $got;
     }
     $gm->generate($target);
 

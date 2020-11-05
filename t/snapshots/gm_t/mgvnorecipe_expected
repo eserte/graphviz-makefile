@@ -1,0 +1,59 @@
+[
+  {
+    ':recipe:1' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
+          'echo Hi\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    ':recipe:2' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
+          'echo Hey\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    'all' => {
+      'fillcolor' => '#ffff99',
+      'fontname' => 'Arial',
+      'fontsize' => 10,
+      'shape' => 'box',
+      'style' => 'filled'
+    },
+    'bar' => $VAR1->[0]{'all'},
+    'blah' => $VAR1->[0]{'all'},
+    'boo' => $VAR1->[0]{'all'},
+    'buz' => $VAR1->[0]{'all'},
+    'foo' => $VAR1->[0]{'all'},
+    'howdy' => $VAR1->[0]{'all'}
+  },
+  {
+    ':recipe:1' => {
+      'blah' => {},
+      'boo' => {}
+    },
+    ':recipe:2' => {
+      'buz' => {},
+      'howdy' => {}
+    },
+    'all' => {
+      'bar' => {},
+      'foo' => {}
+    },
+    'foo' => {
+      ':recipe:1' => {},
+      ':recipe:2' => {}
+    }
+  }
+]

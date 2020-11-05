@@ -1,0 +1,51 @@
+[
+  {
+    ':recipe:1' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
+          'perl prog1.pl $<\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    ':recipe:2' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
+          'perl prog3.pl $< > $@\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    'data/features.tab' => {
+      'fillcolor' => '#ffff99',
+      'fontname' => 'Arial',
+      'fontsize' => 10,
+      'shape' => 'box',
+      'style' => 'filled'
+    },
+    'model' => $VAR1->[0]{'data/features.tab'},
+    'otherfile' => $VAR1->[0]{'data/features.tab'}
+  },
+  {
+    ':recipe:1' => {
+      'data/features.tab' => {}
+    },
+    ':recipe:2' => {
+      'otherfile' => {}
+    },
+    'data/features.tab' => {
+      ':recipe:2' => {}
+    },
+    'model' => {
+      ':recipe:1' => {}
+    }
+  }
+]
