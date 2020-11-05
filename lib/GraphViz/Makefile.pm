@@ -218,6 +218,7 @@ my $GRAPHVIZ_ESCAPE_CHARS = join '|',
 my %GRAPHVIZ_UNESCAPE = (
   reverse(%GRAPHVIZ_ESCAPE),
   l => "\n", "\n" => "",
+  ' ' => ' ',
 );
 my %GRAPHVIZ_RECORD_UNESCAPE = (
   '{' => [ '^\{' ],
