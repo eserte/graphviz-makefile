@@ -136,12 +136,12 @@ sub generate_tree {
     my $prefix = $self->{Prefix};
     $nodes->{$prefix.$target} ||= \%NodeStyleTarget;
     my $make_target = $self->{Make}->target($target);
-    my ($recipe_rules, $bare_rules) = _rules_partition($make_target);
-    my @merged_rules = _rules_merge($recipe_rules, $bare_rules);
-    if (!@merged_rules and !@$bare_rules) {
+    if (!@{ $make_target->rules }) {
         warn "No depends for target $target\n" if $V;
         return;
     }
+    my ($recipe_rules, $bare_rules) = _rules_partition($make_target);
+    my @merged_rules = _rules_merge($recipe_rules, $bare_rules);
     my %to_visit;
     if (@merged_rules) {
         for my $recipe_rule (@merged_rules) {
