@@ -73,6 +73,7 @@ SKIP: {
 my $is_in_path_display = is_in_path("display");
 for my $def (@makefile_tests) {
     my ($makefile, $target, $prefix, $extra, $expected) = @$def;
+    diag "Makefile:\n" . join '', explain $makefile;
     GraphViz::Makefile::_reset_id();
     my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
@@ -90,7 +91,7 @@ for my $def (@makefile_tests) {
                                               UNLINK => 1);
         print $fh $png;
         close $fh;
-        ok(-s $filename, "Non-empty png file for makefile $makefile");
+        ok -s $filename, "Non-empty png file";
         skip("Display png file only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
         skip("ImageMagick/display not available", 1) if !$is_in_path_display;
         system("display", $filename);
