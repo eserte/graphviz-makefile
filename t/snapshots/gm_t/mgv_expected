@@ -1,6 +1,10 @@
 [
   {
     ':recipe:1' => {
+      'label' => '',
+      'shape' => 'diamond'
+    },
+    ':recipe:2' => {
       'fillcolor' => '#dddddd',
       'fontname' => 'Monospace',
       'fontsize' => 8,
@@ -12,7 +16,7 @@
       'shape' => 'record',
       'style' => 'filled'
     },
-    ':recipe:2' => {
+    ':recipe:3' => {
       'fillcolor' => '#dddddd',
       'fontname' => 'Monospace',
       'fontsize' => 8,
@@ -24,7 +28,7 @@
       'shape' => 'record',
       'style' => 'filled'
     },
-    ':recipe:3' => {
+    ':recipe:4' => {
       'fillcolor' => '#dddddd',
       'fontname' => 'Monospace',
       'fontsize' => 8,
@@ -52,23 +56,26 @@
   },
   {
     ':recipe:1' => {
-      'bar' => {},
       'foo' => {}
     },
     ':recipe:2' => {
+      'bar' => {}
+    },
+    ':recipe:3' => {
       'blah' => {},
       'boo' => {}
     },
-    ':recipe:3' => {
+    ':recipe:4' => {
       'buz' => {},
       'howdy' => {}
     },
     'all' => {
-      ':recipe:1' => {}
+      ':recipe:1' => {},
+      ':recipe:2' => {}
     },
     'foo' => {
-      ':recipe:2' => {},
-      ':recipe:3' => {}
+      ':recipe:3' => {},
+      ':recipe:4' => {}
     }
   }
 ]

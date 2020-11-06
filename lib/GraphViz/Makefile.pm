@@ -37,6 +37,10 @@ our %NodeStyleRecipe = (
     fontname  => 'Monospace',
     fontsize  => 8,
 );
+our %NodeStyleRule = (
+    shape => 'diamond',
+    label => '',
+);
 
 sub new {
     my ($pkg, $g, $make, $prefix, %args) = @_;
@@ -112,13 +116,12 @@ sub _recipe2label {
     ];
 }
 
-# mutates $nodes and $edges and $to_visit
+# mutates $nodes and $edges
 sub _node2deps {
-    my ($prefix, $target, $deps, $nodes, $edges, $to_visit) = @_;
+    my ($prefix, $target, $deps, $nodes, $edges) = @_;
     for my $dep (@$deps) {
         $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
         _add_edge($edges, $target, $prefix.$dep);
-        $to_visit->{$dep}++;
     }
 }
 
@@ -136,27 +139,25 @@ sub generate_tree {
     my $prefix = $self->{Prefix};
     $nodes->{$prefix.$target} ||= \%NodeStyleTarget;
     my $make_target = $self->{Make}->target($target);
-    if (!@{ $make_target->rules }) {
+    my @rules = @{ $make_target->rules };
+    if (!@rules) {
         warn "No depends for target $target\n" if $V;
         return;
     }
-    my ($recipe_rules, $bare_rules) = _rules_partition($make_target);
-    my @merged_rules = _rules_merge($recipe_rules, $bare_rules);
     my %to_visit;
-    if (@merged_rules) {
-        for my $recipe_rule (@merged_rules) {
-            my $recipe_id = _gen_id($recipe_rule->{recipe});
-            my $recipe_label = _recipe2label($recipe_rule->{recipe});
-            $nodes->{$recipe_id} ||= { %NodeStyleRecipe, label => $recipe_label };
-            _add_edge($edges, $prefix.$target, $recipe_id);
-            _node2deps(
-                $prefix, $recipe_id, $recipe_rule->{prereqs}, $nodes, $edges, \%to_visit,
-            );
+    for my $rule (@rules) {
+        my $rule_id;
+        if (@{$rule->recipe}) {
+            $rule_id = _gen_id($rule->recipe);
+            my $rule_label = _recipe2label($rule->recipe);
+            $nodes->{$rule_id} ||= { %NodeStyleRecipe, label => $rule_label };
+        } else {
+            $rule_id = _gen_id($rule);
+            $nodes->{$rule_id} ||= \%NodeStyleRule;
         }
-    } else {
-        _node2deps(
-            $prefix, $prefix.$target, $_->prereqs, $nodes, $edges, \%to_visit,
-        ) for @$bare_rules;
+        _add_edge($edges, $prefix.$target, $rule_id);
+        _node2deps($prefix, $rule_id, $rule->prereqs, $nodes, $edges);
+        $to_visit{$_}++ for @{$rule->prereqs};
     }
     $self->generate_tree($_, $visited, $nodes, $edges) for sort keys %to_visit;
     ($nodes, $edges);
@@ -195,21 +196,6 @@ sub find_recursive_makes {
     } else {
         warn "can't match external make command in $cmd\n" if $V;
     }
-}
-
-sub _rules_partition {
-    my ($make_target) = @_;
-    my @rules = @{ $make_target->rules };
-    my (@recipe_rules, @bare_rules);
-    push @{ @{$_->recipe} ? \@recipe_rules : \@bare_rules }, $_ for @rules;
-    (\@recipe_rules, \@bare_rules);
-}
-
-sub _rules_merge {
-    my ($recipe_rules, $bare_rules) = @_;
-    my @bare_deps = map @{ $_->prereqs }, @$bare_rules;
-    map +{ recipe => $_->recipe, prereqs => [ @{ $_->prereqs }, @bare_deps ] },
-        @$recipe_rules;
 }
 
 my %GRAPHVIZ_ESCAPE = (
