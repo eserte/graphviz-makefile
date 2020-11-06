@@ -11,6 +11,7 @@ t/snapshots/gm_t/mgv_expected
 t/snapshots/gm_t/mgvnorecipe_expected
 t/snapshots/gm_t/model_expected
 t/snapshots/gm_t/modelprefix_expected
+t/snapshots/gm_t/recmake
 xt/manifest.t
 xt/pod-coverage.t
 xt/pod.t

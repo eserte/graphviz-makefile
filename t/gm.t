@@ -13,6 +13,12 @@ use Test::Snapshot;
 
 my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
 my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
+my $recmake_fsmap = make_fsmap({
+  Makefile => [ 1, "all: bar sany\nsany:\n\tcd subdir && make\n\tsay hi\n"],
+  'subdir/Makefile' => [ 1, "all: sbar sfoo\n\techo larry\n\techo howdy\n" ],
+});
+my $recmake = Make->new(FSFunctionMap => $recmake_fsmap);
+$recmake->parse;
 my $make_subst = <<'EOF';
 DATA=data
 
@@ -23,6 +29,7 @@ $(DATA)/features.tab: otherfile
 	perl prog3.pl $< > $@
 EOF
 my @makefile_tests = (
+    [$recmake, "all", '', {}, 'recmake'],
     ["$FindBin::RealBin/../Makefile", "all", '', {}, undef],
     [\<<'EOF', "model", '', {}, 'model_expected'],
 model: data/features.tab
@@ -110,6 +117,33 @@ SKIP: {
 }
 
 done_testing;
+
+sub make_fsmap {
+    my ($vfs) = @_;
+    my %fh2file_tuple;
+    return {
+        glob => sub {
+            my @results;
+            for my $subpat ( split /\s+/, $_[0] ) {
+                $subpat =~ s/\*/.*/g;    # ignore ?, [], {} for now
+                ## no critic (BuiltinFunctions::RequireBlockGrep)
+                push @results, grep /^$subpat$/, sort keys %$vfs;
+                ## use critic
+            }
+            return @results;
+        },
+        fh_open => sub {
+            die "@_: No such file or directory" unless exists $vfs->{ $_[1] };
+            my $file_tuple = $vfs->{ $_[1] };
+            open my $fh, "+$_[0]", \$file_tuple->[1];
+            $fh2file_tuple{$fh} = $file_tuple;
+            return $fh;
+        },
+        fh_write      => sub { my $fh = shift; $fh2file_tuple{$fh}[0] = time; print {$fh} @_ },
+        file_readable => sub { exists $vfs->{ $_[0] } },
+        mtime         => sub { ( $vfs->{ $_[0] } || [] )->[0] },
+    };
+}
 
 # REPO BEGIN
 # REPO NAME is_in_path /home/e/eserte/work/srezic-repository 

@@ -65,7 +65,7 @@ sub new {
 }
 
 sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(global => {combine_node_and_port => 0}) }
-sub Make     { shift->{Make}     }
+sub Make     { shift->{Make} }
 
 sub generate {
     my ($self, $target) = @_;
@@ -99,9 +99,11 @@ sub _reset_id {
 }
 
 sub _add_edge {
-    my ($edges, $from, $to) = @_;
+    my ($edges, $from, $to, $from_port) = @_;
     my @edge = ($from, $to);
-    $edges->{$edge[0]}{$edge[1]} ||= {};
+    my %attrs;
+    $attrs{tailport} = $from_port if defined $from_port;
+    $edges->{$edge[0]}{$edge[1]} ||= \%attrs;
     warn "$edge[0] => $edge[1]\n" if $V >= 2;
 }
 
@@ -129,9 +131,9 @@ sub _node2deps {
 sub generate_tree {
     my ($self, $target, $visited, $nodes, $edges) = @_;
     $visited ||= {};
+    return if $visited->{$target}++;
     $nodes ||= {};
     $edges ||= {};
-    return if $visited->{$target}++;
     if (!$self->{Make}->has_target($target)) {
         warn "Can't get make target for $target\n" if $V;
         return;
@@ -151,6 +153,18 @@ sub generate_tree {
             $rule_id = _gen_id($rule->recipe);
             my $rule_label = _recipe2label($rule->recipe);
             $nodes->{$rule_id} ||= { %NodeStyleRecipe, label => $rule_label };
+            my $port = 1;
+            for my $cmd (@{$rule->recipe}) {
+                my ($nodes2, $edges2) = ({}, {});
+                my @targets = _find_recursive_makes($self->{Make}, $cmd, $nodes2, $edges2);
+                next if !@targets;
+                $nodes->{$_} ||= $nodes2->{$_} for keys %$nodes2;
+                _add_edge($edges, $rule_id, $_, ['port'.$port, 'e']) for @targets;
+                for my $k1 (keys %$edges2) {
+                    _add_edge($edges, $k1, $_) for keys %{ $edges2->{$k1} };
+                }
+                $port++;
+            }
         } else {
             $rule_id = _gen_id($rule);
             $nodes->{$rule_id} ||= \%NodeStyleRule;
@@ -163,39 +177,31 @@ sub generate_tree {
     ($nodes, $edges);
 }
 
-sub find_recursive_makes {
-    my ($self, $target_name, $cmd) = @_;
-    if (defined $cmd && $cmd =~ /\bcd\s+(\w+)\s*(?:;|&&)\s*make\s*(.*)/) {
-        my ($dir, $makeargs) = ($1, $2);
-        my $makefile;
-        my $rule;
-        {
-            require Getopt::Long;
-            local @ARGV = split /\s+/, $makeargs;
-            $makefile = "makefile";
-            # XXX parse more options
-            Getopt::Long::GetOptions("f=s" => \$makefile);
-            my @env;
-            foreach (@ARGV) {
-                if (!defined $rule) {
-                    $rule = $_;
-                } elsif (/=/) {
-                    push @env, $_;
-                }
-            }
-        }
-#        warn "dir: $dir, file: $makefile, rule: $rule\n";
-        my $f = "$dir/$makefile"; # XXX make better. use $make->{GNU}
-        $f = "$dir/Makefile" if !-r $f;
-        my $gm2 = GraphViz::Makefile->new($self->GraphViz, $f, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
-        $gm2->generate($rule);
-        $self->GraphViz->add_edge(
-            from => $target_name,
-            to => "$dir/$rule",
-        );
-    } else {
+sub _find_recursive_makes {
+    my ($make, $cmd, $nodes2, $edges2) = @_;
+    unless ($cmd =~ /\bcd\s+([^\s;&]+)\s*(?:;|&&)\s*make\s*(.*)/) {
         warn "can't match external make command in $cmd\n" if $V;
+        return;
     }
+    my ($dir, $makeargs) = ($1, $2);
+    require Getopt::Long;
+    require Text::ParseWords;
+    local @ARGV = Text::ParseWords::shellwords($makeargs);
+    # XXX parse more options
+    Getopt::Long::GetOptions("f=s" => \my $makefile);
+    my ($vars, $targets) = Make::parse_args(@ARGV);
+    my $make2 = 'Make'->new( # quoted to not call function in this module
+        FunctionPackages => $make->function_packages,
+        FSFunctionMap => $make->fsmap,
+        InDir => $dir,
+    );
+    $make2->parse($makefile);
+    $make2->set_var(@$_) for @$vars;
+    $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
+    my $gm2 = GraphViz::Makefile->new(undef, $make2, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
+    my $v2 = {};
+    $gm2->generate_tree($_, $v2, $nodes2, $edges2) for @$targets;
+    map "$dir/$_", @$targets;
 }
 
 my %GRAPHVIZ_ESCAPE = (
@@ -341,12 +347,6 @@ Further arguments (specified as key-value pairs): none at present.
 Generate the graph, beginning at the named Makefile rule. If C<$rule>
 is not given, C<all> is used instead. Mutates the internal C<GraphViz2>
 object.
-
-=item find_recursive_makes($target_name, $cmd)
-
-Search the command for a recursive make (change directory, call
-make). Incorporates into this graph with the subdirectory's target as
-C<dirname/targetname>.
 
 =item generate_tree($target)
 

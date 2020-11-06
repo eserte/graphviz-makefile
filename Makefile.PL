@@ -18,7 +18,7 @@ WriteMakefile(
     NAME		=> 'GraphViz::Makefile',
     VERSION_FROM	=> 'lib/GraphViz/Makefile.pm',
     EXE_FILES		=> [ glob 'scripts/*' ],
-    PREREQ_PM		=> {'GraphViz2' => '2.60', 'Make' => '2.003'},
+    PREREQ_PM		=> {'GraphViz2' => '2.60', 'Make' => '2.004'},
     TEST_REQUIRES => {
         'Test::More' => '1.001002',
         'Test::Snapshot' => '0.06',

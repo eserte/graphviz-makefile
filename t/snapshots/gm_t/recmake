@@ -1,0 +1,73 @@
+[
+  {
+    ':recipe:1' => {
+      'label' => '',
+      'shape' => 'diamond'
+    },
+    ':recipe:2' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
+          'cd subdir && make\\l',
+          'say hi\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    ':recipe:3' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
+          'echo larry\\l',
+          'echo howdy\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    'all' => {
+      'fillcolor' => '#ffff99',
+      'fontname' => 'Arial',
+      'fontsize' => 10,
+      'shape' => 'box',
+      'style' => 'filled'
+    },
+    'bar' => $VAR1->[0]{'all'},
+    'sany' => $VAR1->[0]{'all'},
+    'subdir/all' => $VAR1->[0]{'all'},
+    'subdir/sbar' => $VAR1->[0]{'all'},
+    'subdir/sfoo' => $VAR1->[0]{'all'}
+  },
+  {
+    ':recipe:1' => {
+      'bar' => {},
+      'sany' => {}
+    },
+    ':recipe:2' => {
+      'subdir/all' => {
+        'tailport' => [
+          'port1',
+          'e'
+        ]
+      }
+    },
+    ':recipe:3' => {
+      'subdir/sbar' => {},
+      'subdir/sfoo' => {}
+    },
+    'all' => {
+      ':recipe:1' => {}
+    },
+    'sany' => {
+      ':recipe:2' => {}
+    },
+    'subdir/all' => {
+      ':recipe:3' => {}
+    }
+  }
+]
