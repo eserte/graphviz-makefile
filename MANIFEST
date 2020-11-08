@@ -8,10 +8,15 @@ scripts/tkgvizmakefile
 t/gm.t
 t/snapshots/gm_t/graphviz2tk
 t/snapshots/gm_t/mgv_expected
+t/snapshots/gm_t/mgv_expected_DOT
 t/snapshots/gm_t/mgvnorecipe_expected
+t/snapshots/gm_t/mgvnorecipe_expected_DOT
 t/snapshots/gm_t/model_expected
+t/snapshots/gm_t/model_expected_DOT
 t/snapshots/gm_t/modelprefix_expected
+t/snapshots/gm_t/modelprefix_expected_DOT
 t/snapshots/gm_t/recmake
+t/snapshots/gm_t/recmake_DOT
 xt/manifest.t
 xt/pod-coverage.t
 xt/pod.t

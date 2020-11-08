@@ -83,7 +83,7 @@ sub generate {
             from => $edge_start,
             to => $_,
             %{ $sub_edges->{$_} },
-        ) for keys %$sub_edges;
+        ) for sort keys %$sub_edges;
     }
 }
 

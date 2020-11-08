@@ -89,6 +89,7 @@ for my $def (@makefile_tests) {
         is_deeply_snapshot $got, $expected or diag explain $got;
     }
     $gm->generate($target);
+    is_deeply_snapshot $gm->GraphViz->dot_input, "$expected DOT" if $expected;
     my $png = eval { $gm->GraphViz->run(format=>"png")->dot_output };
     SKIP: {
         skip("Cannot create png file: $@", 2)
