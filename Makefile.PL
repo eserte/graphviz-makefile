@@ -24,7 +24,7 @@ WriteMakefile(
         'Test::Snapshot' => '0.06',
     },
     LICENSE	      => 'perl',
-    MIN_PERL_VERSION => '5.010', # GraphViz2
+    MIN_PERL_VERSION => '5.008008', # GraphViz2
     ABSTRACT_FROM  => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
     AUTHOR         => 'Slaven Rezic <srezic@cpan.org>',
     ($eumm_recent_enough ?

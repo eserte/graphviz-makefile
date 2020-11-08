@@ -4,7 +4,7 @@
 - deprecate mutating generate method
 - better styling for GraphViz
 - add nodes for recipes too
-- change from GraphViz to GraphViz2 (min Perl now 5.010)
+- change from GraphViz to GraphViz2 (min Perl now 5.8.8)
 - drop "reversed" mode - just give GraphViz option to reverse arrows
 - show recursive makes
 
