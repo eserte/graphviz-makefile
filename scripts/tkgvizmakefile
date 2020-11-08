@@ -28,7 +28,7 @@ our $VERSION = '1.09';
         my @scrollregion = ($Tk::VERSION == 800.017
                             ? $c->cget(-scrollregion)
                             : @{$c->cget(-scrollregion)});
-        my $see_view = ($c->{Configure}{-seeview} ? $c->{Configure}{-seeview} : 'see_view');
+        my $see_view = $c->{Configure}{-seeview} || 'see_view';
         if (!defined $x || !defined $y) {
             $c->$see_view(0.5, 0.5, %args);
         } else {
