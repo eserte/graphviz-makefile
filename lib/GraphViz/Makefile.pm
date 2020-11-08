@@ -64,7 +64,7 @@ sub new {
     bless $self, $pkg;
 }
 
-sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(global => {combine_node_and_port => 0}) }
+sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(global => {combine_node_and_port => 0, directed => 1}) }
 sub Make     { shift->{Make} }
 
 sub generate {
@@ -293,7 +293,7 @@ Output to a .png file:
 
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
-    my $g = GraphViz2->new(global => {combine_node_and_port => 0});
+    my $g = GraphViz2->new(global => {combine_node_and_port => 0, directed => 1});
     my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
     $g->add_node(
         name => $_,

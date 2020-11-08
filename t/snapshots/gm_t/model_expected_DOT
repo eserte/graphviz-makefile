@@ -1,12 +1,12 @@
-'graph Perl {
+'digraph Perl {
  ":recipe:1" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> perl\\ prog1.pl\\ $\\<\\l}" shape="record" style="filled" ]
  ":recipe:2" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> perl\\ prog3.pl\\ $\\<\\ \\>\\ $@\\l}" shape="record" style="filled" ]
  "data/features.tab" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="data/features.tab" shape="box" style="filled" ]
  "model" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="model" shape="box" style="filled" ]
  "otherfile" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="otherfile" shape="box" style="filled" ]
- ":recipe:1" -- "data/features.tab"
- ":recipe:2" -- "otherfile"
- "data/features.tab" -- ":recipe:2"
- "model" -- ":recipe:1"
+ ":recipe:1" -> "data/features.tab"
+ ":recipe:2" -> "otherfile"
+ "data/features.tab" -> ":recipe:2"
+ "model" -> ":recipe:1"
 }
 '

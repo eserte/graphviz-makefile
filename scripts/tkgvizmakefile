@@ -89,7 +89,7 @@ sub generate_graphviz {
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
     my $g = GraphViz2->new(
         $reversed ? (edge => { dir => 'back' }, graph => { rankdir => 'BT' }) : (),
-        global => { combine_node_and_port => 0 }
+        global => { combine_node_and_port => 0, directed => 1 }
     );
     my ($nodes, $edges) = $gm->generate_tree($rule);
     $g->add_node(
