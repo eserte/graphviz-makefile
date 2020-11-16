@@ -20,11 +20,11 @@ our $VERSION = '1.09';
 
     # from Tk::CanvasUtil
     sub center_view {
-        my($c, $x, $y, %args) = @_;
-        my(@xview) = $c->xview;
-        my(@yview) = $c->yview;
-        my($xwidth) = $xview[1]-$xview[0];
-        my($ywidth) = $yview[1]-$yview[0];
+        my ($c, $x, $y, %args) = @_;
+        my @xview = $c->xview;
+        my @yview = $c->yview;
+        my $xwidth = $xview[1]-$xview[0];
+        my $ywidth = $yview[1]-$yview[0];
         my @scrollregion = ($Tk::VERSION == 800.017
                             ? $c->cget(-scrollregion)
                             : @{$c->cget(-scrollregion)});
@@ -59,14 +59,12 @@ $ENV{MAKE}="make" if !defined $ENV{MAKE}; # to propagate MAKE to submakefiles
 my $file       = "Makefile";
 my $outputtype = "tkcanvas";
 my $outputfile;
-my $tkcanvastype = "best";
 my $prefix = "";
 my $reversed = 0;
 if (!GetOptions("f|file=s" => \$file,
                 "T=s" => \$outputtype,
                 "o=s" => \$outputfile,
                 "v!"  => \$GraphViz::Makefile::V,
-                "tkcanvastype=s" => \$tkcanvastype,
                 "prefix=s" => \$prefix,
                 "reversed!" => \$reversed,
                )) {
@@ -78,14 +76,14 @@ my $gm_args = {};
 my $graphviz = generate_graphviz($file, $rule, $prefix, $reversed, $gm_args);
 
 if ($outputtype eq 'tkcanvas') {
-    tkcanvas_output($rule, $graphviz, $prefix, $gm_args);
+    tkcanvas_output($rule, $graphviz, $prefix, $reversed, $gm_args);
 } else {
     die "-o is missing" if !defined $outputfile;
     $graphviz->run(format => $outputtype, output_file => $outputfile);
 }
 
 sub generate_graphviz {
-    my($file, $rule, $prefix, $reversed, $gm_args) = @_;
+    my ($file, $rule, $prefix, $reversed, $gm_args) = @_;
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
     my $g = GraphViz2->new(
         $reversed ? (edge => { dir => 'back' }, graph => { rankdir => 'BT' }) : (),
@@ -109,13 +107,14 @@ sub generate_graphviz {
 }
 
 sub tkcanvas_output {
-    my ($rule, $graphviz, $prefix, $gm_args) = @_;
+    my ($rule, $graphviz, $prefix, $reversed, $gm_args) = @_;
     require Tk;
+    require Tk::GraphViz;
     my $mw = MainWindow->new;
     my $c;
     $mw->configure(-menu => $mw->Menu(-menuitems => [
         [Cascade => "~File", -menuitems => [
-            [Button => "~Open", -command => sub { choose_new_file($mw, $rule, $prefix, $gm_args) }],
+            [Button => "~Open", -command => sub { choose_new_file($mw, $rule, $prefix, $reversed, $gm_args) }],
             [Button => "E~xit", -command => sub { $mw->destroy }],
         ]],
         [Cascade => "~View", -menuitems => [
@@ -140,28 +139,16 @@ sub tkcanvas_output {
              }],
         ]],
     ]));
-
-    if ($tkcanvastype =~ /^(best|tkgraphviz)$/ &&
-        eval { require Tk::GraphViz }) {
-        $tkcanvastype = "tkgraphviz";
-    } else {
-        $tkcanvastype = "tkcanvas";
-    }
-
-    if ($tkcanvastype eq 'tkgraphviz') {
-        $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe");
-        $c->createBindings;
-        $c->bind('node', '<Button-1>', sub {
-                     my @tags = $c->gettags('current');
-                     push @tags, undef unless (@tags % 2) == 0;
-                     my %tags = @tags;
-                     printf "Clicked node: '%s' => %s\n", $tags{node}, $tags{label};
-                 }
-                );
-        $c->itemconfigure('edge', -activefill => 'green');
-    } else {
-        $c = $mw->Scrolled("Canvas", -scrollbars => "osoe");
-    }
+    $mw->bind('<Key-q>' => [$mw, 'destroy']);
+    $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe");
+    $c->createBindings;
+    $c->bind('node', '<Button-1>', sub {
+        my @tags = $c->gettags('current');
+        push @tags, undef unless (@tags % 2) == 0;
+        my %tags = @tags;
+        printf "Clicked node: '%s' => %s\n", $tags{node}, $tags{label};
+    });
+    $c->itemconfigure('edge', -activefill => 'green');
     $c->pack(-fill=>"both", -expand=>1);
     $mw->Advertise(Graph => $c);
     draw_graph($mw, $rule, $prefix, $graphviz);
@@ -169,17 +156,10 @@ sub tkcanvas_output {
 }
 
 sub draw_graph {
-    my($w, $rule, $prefix, $graphviz) = @_;
+    my ($w, $rule, $prefix, $graphviz) = @_;
     my $c = $w->Subwidget("Graph");
-    if ($tkcanvastype eq 'tkgraphviz') {
-        $c->show($graphviz);
-    } else {
-        for my $m (GraphViz::Makefile::graphviz2tk($graphviz->run(format=>"plain")->dot_output)) {
-            my ($method, @args) = @$m;
-            $c->$method(@args);
-        }
-    }
-    my @c = $c->coords("rule_$prefix$rule");
+    $c->show($graphviz);
+    my @c = $c->coords("$prefix$rule");
     $c->idletasks;
     $c->center_view($c[0],$c[1]);
 }
@@ -195,7 +175,7 @@ sub zoom_out {
 }
 
 sub zoom_any {
-    my($c, $scalefactor) = @_;
+    my ($c, $scalefactor) = @_;
     $c->scale("all", 0, 0, $scalefactor, $scalefactor);
     my @scrollregion = @{ $c->cget(-scrollregion) };
     foreach (@scrollregion) { $_ *= $scalefactor }
@@ -221,10 +201,10 @@ sub zoom_any {
 }
 
 sub choose_new_file {
-    my($w, $rule, $prefix, $gm_args) = @_;
+    my ($w, $rule, $prefix, $reversed, $gm_args) = @_;
     my $new_file = $w->getOpenFile;
     if (defined $new_file) {
-        my $graphviz = generate_graphviz($new_file, $rule, $prefix, $gm_args);
+        my $graphviz = generate_graphviz($new_file, $rule, $prefix, $reversed, $gm_args);
         draw_graph($w, $rule, $prefix, $graphviz);
     }
 }
@@ -236,7 +216,11 @@ tkgvizmakefile - create Tk graphs from Makefiles
 =head1 SYNOPSIS
 
     tkgvizmakefile [-f makefile] [-T output] [-o outputfile]
-                   [-reversed] [-prefix prefix] [-tkcanvatype type] [rule]
+                   [-reversed] [-prefix prefix] [rule]
+
+=head1 DESCRIPTION
+
+Uses L<Tk::GraphViz> to visualise the given makefile.
 
 =head1 OPTIONS
 
@@ -270,18 +254,11 @@ Add the given prefix to each rule
 Start graph output from the named Makefile rule. If missing, the
 C<all> or first rule is used.
 
-=item -tkcanvastype I<type>
-
-Only for C<tkcanvas> type: if I<type> is set to C<tkgraphviz>, then
-use L<Tk::GraphViz>. if it set to C<tkcanvas>, then use L<Tk::Canvas>
-as the output widget. The default is C<best>, which means try
-C<Tk::GraphViz> first, then C<Tk::Canvas>.
-
 =back
 
 =head1 SEE ALSO
 
-L<dot(1)>, L<GraphViz2>, L<GraphViz::Makefile>, L<Tk>, L<Tk::GraphViz>, L<Tk::Canvas>.
+L<dot(1)>, L<GraphViz2>, L<GraphViz::Makefile>, L<Tk>, L<Tk::GraphViz>.
 
 =cut
 

@@ -14,21 +14,43 @@ EOF
     };
 }
 
+my $repo = 'eserte/graphviz-makefile';
 WriteMakefile(
-    NAME		=> 'GraphViz::Makefile',
-    VERSION_FROM	=> 'lib/GraphViz/Makefile.pm',
-    EXE_FILES		=> [ glob 'scripts/*' ],
-    PREREQ_PM		=> {'GraphViz2' => '2.60', 'Make' => '2.004'},
-    TEST_REQUIRES => {
-        'Test::More' => '1.001002',
-        'Test::Snapshot' => '0.06',
+  NAME => 'GraphViz::Makefile',
+  VERSION_FROM	=> 'lib/GraphViz/Makefile.pm',
+  EXE_FILES => [ glob 'scripts/*' ],
+  PREREQ_PM => {'GraphViz2' => '2.60', 'Make' => '2.004'},
+  TEST_REQUIRES => {
+    'Test::More' => '1.001002',
+    'Test::Snapshot' => '0.06',
+  },
+  LICENSE => 'perl',
+  MIN_PERL_VERSION => '5.008008', # GraphViz2
+  ABSTRACT_FROM => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
+  AUTHOR => 'Slaven Rezic <srezic@cpan.org>',
+  (!$eumm_recent_enough ? () : (META_MERGE => {
+    "meta-spec" => { version => 2 },
+    dynamic_config => 0,
+    resources => {
+      x_IRC => 'irc://irc.perl.org/#graphql-perl',
+      repository => {
+        type => 'git',
+        url => "git\@github.com:$repo.git",
+        web => "https://github.com/$repo",
+      },
+      bugtracker  => {
+        web => "https://github.com/$repo/issues",
+      },
+      license => [ 'http://dev.perl.org/licenses/' ],
     },
-    LICENSE	      => 'perl',
-    MIN_PERL_VERSION => '5.008008', # GraphViz2
-    ABSTRACT_FROM  => 'lib/GraphViz/Makefile.pm', # retrieve abstract from module
-    AUTHOR         => 'Slaven Rezic <srezic@cpan.org>',
-    ($eumm_recent_enough ?
-      (META_ADD => { resources => { repository => 'git://github.com/eserte/graphviz-makefile.git' } }) : ()),
+    prereqs => {
+      runtime => {
+        recommends => {
+          'Tk::GraphViz' => '1.06',
+        },
+      },
+    },
+  })),
 );
 
 sub MY::postamble {

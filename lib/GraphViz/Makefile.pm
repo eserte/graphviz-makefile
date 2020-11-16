@@ -210,72 +210,10 @@ my %GRAPHVIZ_ESCAPE = (
 );
 my $GRAPHVIZ_ESCAPE_CHARS = join '|',
     map quotemeta, sort keys %GRAPHVIZ_ESCAPE;
-my %GRAPHVIZ_UNESCAPE = (
-  reverse(%GRAPHVIZ_ESCAPE),
-  l => "\n", "\n" => "",
-  ' ' => ' ',
-);
-my %GRAPHVIZ_RECORD_UNESCAPE = (
-  '{' => [ '^\{' ],
-  '}' => [ '\}$' ],
-  '\\l}' => [ '\\\\l\}' ],
-  '\\l|' => [ '\\\\l\|', "\n" ],
-  '|' => [ '\|', "\n" ],
-  '' => [ '<[^>]+>\s*' ],
-);
-my $GRAPHVIZ_RECORD_UNESCAPE_CHARS = join '|',
-    map $GRAPHVIZ_RECORD_UNESCAPE{$_}[0], sort keys %GRAPHVIZ_RECORD_UNESCAPE;
 sub graphviz_escape {
     my ($text) = @_;
     $text =~ s/($GRAPHVIZ_ESCAPE_CHARS)/\\$GRAPHVIZ_ESCAPE{$1}/gs;
     $text;
-}
-sub graphviz_unescape {
-    my ($text, $shape) = @_;
-    my $record_pat = $shape eq 'record' ? $GRAPHVIZ_RECORD_UNESCAPE_CHARS : '';
-    $text =~ s/($record_pat)|\\(.)/
-        $2 ? do {
-            my $e = $GRAPHVIZ_UNESCAPE{$2};
-            die "Unknown GraphViz escape '$2' in '$text'" unless defined $e;
-            $e;
-        } : $1 ? $GRAPHVIZ_RECORD_UNESCAPE{$1}[1] || '' : ''
-    /gse;
-    $text;
-}
-
-sub graphviz2tk {
-    my($text) = @_;
-    require Text::ParseWords;
-    my $tfm = sub { my($x,$y) = @_; ($x*100,$y*100) };
-    my @methods;
-    foreach my $l (split /(?<!\\)\n/, $text) {
-        # spec from https://www.graphviz.org/doc/info/output.html#d:plain
-        my(@w) = Text::ParseWords::quotewords('\s+', 1, $l);
-        my $type = shift @w;
-        if ($type eq 'graph') {
-            push @methods, [ 'configure', -scrollregion => [$tfm->(0,0),$tfm->($w[1],$w[2])] ];
-        } elsif ($type eq 'node') {
-            my ($name, $x, $y, $width, $height, $label, $style, $shape, $color, $fillcolor) = @w;
-            ($x,$y) = $tfm->($x, $y);
-            ($width,$height) = $tfm->($width, $height);
-            my $method = 'create' . ($shape =~ /^(box|record)$/ ? 'Rectangle' : 'Oval');
-            push @methods, [ $method, $x-$width/2,$y-$height/2,$x+$width/2,$y+$height/2, -fill=>$fillcolor ];
-            $label =~ s/\A"(.*)"\z/$1/gs;
-            $label = graphviz_unescape($label, $shape);
-            chomp $label;
-            push @methods, [ 'createText', $x,$y,-text => $label, -tag => ["rule","rule_$label"] ];
-        } elsif ($type eq 'edge') {
-            my ($from, $to, $no) = splice @w, 0, 3;
-            my @coords;
-            push @coords, $tfm->(splice @w, 0, 2) while $no-- > 0;
-            push @methods, [ 'createLine', @coords, -arrow => "last", -smooth => 1 ];
-        } elsif ($type eq 'stop') {
-            last;
-        } else {
-            warn "Ignore directive $type @w\n";
-        }
-    }
-    @methods;
 }
 
 1;
@@ -338,7 +276,7 @@ case, the default Makefile is used. The third argument C<$prefix> is
 optional and can be used to prepend a prefix to all rule names in the
 graph output.
 
-The created nodes are named C<rule_$prefix$name>.
+The created nodes are named C<$prefix$name>.
 
 Further arguments (specified as key-value pairs): none at present.
 
@@ -384,24 +322,9 @@ Return a reference to the C<Make> object.
 
 =head1 FUNCTIONS
 
-=head2 graphviz2tk
-
-    my $c = $w->Subwidget("Graph");
-    for my $m (GraphViz::Makefile::graphviz2tk($graphviz2->run(format=>"plain")->dot_output)) {
-        my ($method, @args) = @$m;
-        $c->$method(@args);
-    }
-
-Given the result of C<< $graphviz2->run(format=>"plain")->dot_output >>,
-returns list of array-refs whose first element is a Tk Graph method call,
-and the rest is the arguments.
-
 =head2 graphviz_escape
 
-=head2 graphviz_unescape
-
-These turn characters considered special by GraphViz into escaped versions,
-and back.
+Turn characters considered special by GraphViz into escaped versions.
 
 =head1 ALTERNATIVES
 

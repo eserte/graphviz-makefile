@@ -80,7 +80,7 @@ SKIP: {
 my $is_in_path_display = is_in_path("display");
 for my $def (@makefile_tests) {
     my ($makefile, $target, $prefix, $extra, $expected) = @$def;
-    diag "Makefile:\n" . join '', explain $makefile;
+    diag "Makefile: " . join '', explain $makefile;
     GraphViz::Makefile::_reset_id();
     my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
@@ -105,16 +105,6 @@ for my $def (@makefile_tests) {
         system("display", $filename);
         pass("Displayed...");
     }
-}
-
-SKIP: {
-  skip "graphviz2tk test only with INTERACTIVE=1 mode", 1 if !$ENV{INTERACTIVE};
-  no warnings 'qw';
-  GraphViz::Makefile::_reset_id();
-  my $gm = GraphViz::Makefile->new(undef, $makefile_tests[5][0]);
-  $gm->generate;
-  my $got_tk = [ GraphViz::Makefile::graphviz2tk($gm->GraphViz->run(format=>"plain")->dot_output) ];
-  is_deeply_snapshot $got_tk, 'graphviz2tk';
 }
 
 done_testing;
