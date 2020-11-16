@@ -22,6 +22,7 @@ WriteMakefile(
   PREREQ_PM => {
     'GraphViz2' => '2.62', # fixed label-quoting
     'Make' => '2.005', # targets method
+    'Graph' => '0.9708', # rename_vertex method
   },
   TEST_REQUIRES => {
     'Test::More' => '1.001002',

@@ -16,6 +16,7 @@ use GraphViz2;
 use Make;
 use strict;
 use warnings;
+use Graph;
 
 our $VERSION = '1.18';
 
@@ -41,6 +42,9 @@ our %NodeStyleRule = (
     shape => 'diamond',
     label => '',
 );
+my %GRAPHVIZ_GRAPH_ARGS = (global => {directed => 1, combine_node_and_port => 0});
+my %TypeTarget = (type => 'target'); # these are so all point at same data
+my %TypeRule = (type => 'rule');
 
 sub new {
     my ($pkg, $g, $make, $prefix, %args) = @_;
@@ -51,16 +55,15 @@ sub new {
         $make = Make->new;
         $make->parse($makefile);
     }
-
     my @illegal_args = grep !exists $ALLOWED_ARGS{$_}, keys %args;
     die "Unrecognized arguments @illegal_args, known arguments are @ALLOWED_ARGS"
         if @illegal_args;
-
-    my $self = { GraphViz => $g,
-                 Make     => $make,
-                 Prefix   => ($prefix||""),
-                 %args
-               };
+    my $self = {
+        GraphViz => $g,
+        Make => $make,
+        Prefix => ($prefix||""),
+        %args,
+    };
     bless $self, $pkg;
 }
 
@@ -69,18 +72,7 @@ sub Make     { shift->{Make} }
 
 sub generate {
     my ($self) = @_;
-    my ($nodes, $edges) = $self->generate_tree;
-    my $g = $self->GraphViz;
-    for my $v (sort keys %$nodes) {
-        $g->add_node(name => $v, label => graphviz_escape($v), %{ $nodes->{$v} });
-        my $sub_edges = $edges->{$v};
-        next unless $sub_edges;
-        $g->add_edge(
-            from => $v,
-            to => $_,
-            %{ $sub_edges->{$_} },
-        ) for sort keys %$sub_edges;
-    }
+    $self->GraphViz->from_graph(graphvizify($self->generate_graph));
 }
 
 my ($id_counter, %ref2counter);
@@ -94,15 +86,6 @@ sub _reset_id {
     $id_counter = 0;
 }
 
-sub _add_edge {
-    my ($edges, $from, $to, $from_port) = @_;
-    my @edge = ($from, $to);
-    my %attrs;
-    $attrs{tailport} = $from_port if defined $from_port;
-    $edges->{$edge[0]}{$edge[1]} ||= \%attrs;
-    warn "$edge[0] => $edge[1]\n" if $V >= 2;
-}
-
 my %CHR2ENCODE = ("\\" => '\\\\');
 my $CHR_PAT = join '|', map quotemeta, sort keys %CHR2ENCODE;
 sub _recipe2label {
@@ -114,22 +97,53 @@ sub _recipe2label {
     ];
 }
 
-# mutates $nodes and $edges
-sub _node2deps {
-    my ($prefix, $target, $deps, $nodes, $edges) = @_;
-    for my $dep (@$deps) {
-        $nodes->{$prefix.$dep} ||= \%NodeStyleTarget;
-        _add_edge($edges, $target, $prefix.$dep);
+sub graphvizify {
+    my ($g) = @_;
+    for my $v ($g->vertices) {
+        my $attrs = $g->get_vertex_attributes($v);
+        my $type = $attrs->{type};
+        if ($type eq 'target') {
+            $g->set_vertex_attributes($v, { %$attrs, graphviz => {
+                label => graphviz_escape($v),
+                %NodeStyleTarget,
+            } });
+        } elsif ($type eq 'recipe') {
+            $g->set_vertex_attributes($v, { %$attrs, graphviz => {
+                label => _recipe2label($attrs->{recipe}),
+                %NodeStyleRecipe,
+            } });
+            for my $e ($g->edges_from($v)) {
+                my $fromline = $g->get_edge_attribute(@$e, 'fromline');
+                $g->set_edge_attributes(@$e, { graphviz => {
+                    tailport => ['port' . ($fromline+1), 'e'],
+                } }) if defined $fromline;
+            }
+        } else {
+            # bare rule
+            $g->set_vertex_attributes($v, { %$attrs, graphviz => \%NodeStyleRule });
+        }
+    }
+    $g->set_graph_attribute(graphviz => \%GRAPHVIZ_GRAPH_ARGS);
+    $g;
+}
+
+sub _graph_ingest {
+    my ($g, $g2) = @_;
+    for my $v ($g2->vertices) {
+        $g->set_vertex_attributes($v, $g2->get_vertex_attributes($v));
+        $g->set_edge_attributes(@$_, $g2->get_edge_attributes(@$_))
+            for $g2->edges_from($v);
     }
 }
 
-sub generate_tree {
+sub generate_graph {
     my ($self) = @_;
-    my (%nodes, %edges);
     my $prefix = $self->{Prefix};
-    for my $target (sort $self->{Make}->targets) {
-        $nodes{$prefix.$target} ||= \%NodeStyleTarget;
-        my $make_target = $self->{Make}->target($target);
+    my $g = Graph->new;
+    my $m = $self->{Make};
+    for my $target (sort $m->targets) {
+        $g->set_vertex_attributes($prefix.$target, \%TypeTarget);
+        my $make_target = $m->target($target);
         my @rules = @{ $make_target->rules };
         if (!@rules) {
             warn "No depends for target $target\n" if $V;
@@ -139,28 +153,29 @@ sub generate_tree {
             my $rule_id;
             if (@{$rule->recipe}) {
                 $rule_id = _gen_id($rule->recipe);
-                my $rule_label = _recipe2label($rule->recipe);
-                $nodes{$rule_id} ||= { %NodeStyleRecipe, label => $rule_label };
-                my $port = 1;
-                for my $cmd (@{$rule->recipe}) {
-                    my ($nodes2, $edges2, @targets) = _find_recursive_makes($self->{Make}, $cmd);
+                my $recipe = $rule->recipe;
+                $g->set_vertex_attributes($rule_id, { type => 'recipe', recipe => $recipe });
+                my $line = 0;
+                for my $cmd (@$recipe) {
+                    my ($g2, @targets) = _find_recursive_makes($m, $cmd);
                     next if !@targets;
-                    $nodes{$_} ||= $nodes2->{$_} for keys %$nodes2;
-                    _add_edge(\%edges, $rule_id, $_, ['port'.$port, 'e']) for @targets;
-                    for my $k1 (keys %$edges2) {
-                        _add_edge(\%edges, $k1, $_) for keys %{ $edges2->{$k1} };
-                    }
-                    $port++;
+                    _graph_ingest($g, $g2);
+                    $g->set_edge_attribute($rule_id, $_, fromline => $line)
+                        for @targets;
+                    $line++;
                 }
             } else {
                 $rule_id = _gen_id($rule);
-                $nodes{$rule_id} ||= \%NodeStyleRule;
+                $g->set_vertex_attributes($rule_id, \%TypeRule);
             }
-            _add_edge(\%edges, $prefix.$target, $rule_id);
-            _node2deps($prefix, $rule_id, $rule->prereqs, \%nodes, \%edges);
+            $g->add_edge($prefix.$target, $rule_id);
+            for my $dep (@{ $rule->prereqs }) {
+                $g->set_vertex_attributes($prefix.$dep, \%TypeTarget);
+                $g->add_edge($rule_id, $prefix.$dep);
+            }
         }
     }
-    (\%nodes, \%edges);
+    $g;
 }
 
 sub _find_recursive_makes {
@@ -185,7 +200,7 @@ sub _find_recursive_makes {
     $make2->set_var(@$_) for @$vars;
     $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
     my $gm2 = GraphViz::Makefile->new(undef, $make2, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
-    ($gm2->generate_tree, map "$dir/$_", @$targets);
+    ($gm2->generate_graph, map "$dir/$_", @$targets);
 }
 
 my %GRAPHVIZ_ESCAPE = (
@@ -216,20 +231,7 @@ Output to a .png file:
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     my $g = GraphViz2->new(global => {combine_node_and_port => 0, directed => 1});
-    my ($nodes, $edges) = $gm->generate_tree;
-    $g->add_node(
-        name => $_,
-        label => GraphViz::Makefile::graphviz_escape($_),
-        %{ $nodes->{$_} },
-    ) for sort keys %$nodes;
-    for my $edge_start (sort keys %$edges) {
-        my $sub_edges = $edges->{$edge_start};
-        $g->add_edge(
-            from => $edge_start,
-            to => $_,
-            %{ $sub_edges->{$_} },
-        ) for keys %$sub_edges;
-    }
+    $g->from_graph(GraphViz::Makefile::graphvizify($gm->generate_graph));
     $g->run(format => "png", output_file => "makefile.png");
 
 To output to a .ps file, just replace C<png> with C<ps> in the filename
@@ -268,32 +270,20 @@ Further arguments (specified as key-value pairs): none at present.
 
 Generate the graph. Mutates the internal C<GraphViz2> object.
 
-=item generate_tree
+=item generate_graph
 
-    my ($nodes, $edges) = $gm->generate_tree;
-    $g->add_node(
-        name => $_,
-        label => GraphViz::Makefile::graphviz_escape($_),
-        %{ $nodes->{$_} },
-    ) for sort keys %$nodes;
-    for my $edge_start (sort keys %$edges) {
-        my $sub_edges = $edges->{$edge_start};
-        $g->add_edge(
-            from => $edge_start,
-            to => $_,
-            %{ $sub_edges->{$_} },
-        ) for keys %$sub_edges;
-    }
+    my $gm = GraphViz::Makefile->new(undef, "Makefile");
+    my $graph = $gm->generate_graph;
+    $gv->from_graph(GraphViz::Makefile::graphvizify($graph));
+    $gv->run(format => "png", output_file => "makefile.png");
 
-Return a hash-refs of nodes and edges. The values (or second-level
-values for edges) are hash-refs of further arguments for the GraphViz2
-C<add_node> and C<add_edge> methods respectively.
+Return a L<Graph> object representing this Makefile.
 
 =item GraphViz
 
 Return a reference to the C<GraphViz2> object. This object will be used
 for the output methods. Will only be created if used. It is recommended
-to instead use the C<generate_tree> method and make the calls on an
+to instead use the C<generate_graph> method and make the calls on an
 externally-controlled L<GraphViz2> object.
 
 =item Make
@@ -306,7 +296,16 @@ Return a reference to the C<Make> object.
 
 =head2 graphviz_escape
 
-Turn characters considered special by GraphViz into escaped versions.
+Turn characters in the given string, that are considered special by
+GraphViz, into escaped versions so that they will appear literally as
+given in the visualisation.
+
+=head2 graphvizify
+
+    GraphViz::Makefile::graphvizify($graph);
+
+Adds attributes to the given L<Graph> object of a makefile, to make it
+be visualised well using L<GraphViz2/from_graph>.
 
 =head1 ALTERNATIVES
 

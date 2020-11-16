@@ -1,65 +1,36 @@
 [
   {
     ':recipe:1' => {
-      'label' => '',
-      'shape' => 'diamond'
+      'type' => 'rule'
     },
     ':recipe:2' => {
-      'fillcolor' => '#dddddd',
-      'fontname' => 'Monospace',
-      'fontsize' => 8,
-      'label' => [
-        [
-          'echo hallo perl\\\\lib double\\\\\\\\l\\l'
-        ]
+      'recipe' => [
+        'echo hallo perl\\lib double\\\\l'
       ],
-      'shape' => 'record',
-      'style' => 'filled'
+      'type' => 'recipe'
     },
     ':recipe:3' => {
-      'fillcolor' => '#dddddd',
-      'fontname' => 'Monospace',
-      'fontsize' => 8,
-      'label' => [
-        [
-          'echo larry\\l',
-          'echo howdy\\l'
-        ]
+      'recipe' => [
+        'echo larry',
+        'echo howdy'
       ],
-      'shape' => 'record',
-      'style' => 'filled'
+      'type' => 'recipe'
     },
     ':recipe:4' => $VAR1->[0]{':recipe:1'},
     ':recipe:5' => {
-      'fillcolor' => '#dddddd',
-      'fontname' => 'Monospace',
-      'fontsize' => 8,
-      'label' => [
-        [
-          'echo Hi\\l'
-        ]
+      'recipe' => [
+        'echo Hi'
       ],
-      'shape' => 'record',
-      'style' => 'filled'
+      'type' => 'recipe'
     },
     ':recipe:6' => {
-      'fillcolor' => '#dddddd',
-      'fontname' => 'Monospace',
-      'fontsize' => 8,
-      'label' => [
-        [
-          'echo Hey\\l'
-        ]
+      'recipe' => [
+        'echo Hey'
       ],
-      'shape' => 'record',
-      'style' => 'filled'
+      'type' => 'recipe'
     },
     'all' => {
-      'fillcolor' => '#ffff99',
-      'fontname' => 'Arial',
-      'fontsize' => 10,
-      'shape' => 'box',
-      'style' => 'filled'
+      'type' => 'target'
     },
     'any' => $VAR1->[0]{'all'},
     'bar' => $VAR1->[0]{'all'},

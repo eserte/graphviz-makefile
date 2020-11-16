@@ -87,22 +87,9 @@ sub generate_graphviz {
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
     my $g = GraphViz2->new(
         $reversed ? (edge => { dir => 'back' }, graph => { rankdir => 'BT' }) : (),
-        global => { combine_node_and_port => 0, directed => 1 }
+        global => { combine_node_and_port => 0, directed => 1 },
     );
-    my ($nodes, $edges) = $gm->generate_tree;
-    $g->add_node(
-        name => $_,
-        label => GraphViz::Makefile::graphviz_escape($_),
-        %{ $nodes->{$_} },
-    ) for sort keys %$nodes;
-    for my $edge_start (sort keys %$edges) {
-        my $sub_edges = $edges->{$edge_start};
-        $g->add_edge(
-            from => $edge_start,
-            to => $_,
-            %{ $sub_edges->{$_} },
-        ) for keys %$sub_edges;
-    }
+    $g->from_graph(GraphViz::Makefile::graphvizify($gm->generate_graph));
     $g;
 }
 

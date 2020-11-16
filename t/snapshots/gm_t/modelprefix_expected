@@ -1,35 +1,19 @@
 [
   {
     ':recipe:1' => {
-      'fillcolor' => '#dddddd',
-      'fontname' => 'Monospace',
-      'fontsize' => 8,
-      'label' => [
-        [
-          'perl prog3.pl $< > $@\\l'
-        ]
+      'recipe' => [
+        'perl prog3.pl $< > $@'
       ],
-      'shape' => 'record',
-      'style' => 'filled'
+      'type' => 'recipe'
     },
     ':recipe:2' => {
-      'fillcolor' => '#dddddd',
-      'fontname' => 'Monospace',
-      'fontsize' => 8,
-      'label' => [
-        [
-          'perl prog1.pl $<\\l'
-        ]
+      'recipe' => [
+        'perl prog1.pl $<'
       ],
-      'shape' => 'record',
-      'style' => 'filled'
+      'type' => 'recipe'
     },
     'testdata/features.tab' => {
-      'fillcolor' => '#ffff99',
-      'fontname' => 'Arial',
-      'fontsize' => 10,
-      'shape' => 'box',
-      'style' => 'filled'
+      'type' => 'target'
     },
     'testmodel' => $VAR1->[0]{'testdata/features.tab'},
     'testotherfile' => $VAR1->[0]{'testdata/features.tab'}

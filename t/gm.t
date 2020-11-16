@@ -85,8 +85,11 @@ for my $def (@makefile_tests) {
     my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {
-        my $got = [ $gm->generate_tree ];
-        is_deeply_snapshot $got, $expected or diag explain $got;
+        my $g = $gm->generate_graph;
+        my %e;
+        $e{$_->[0]}{$_->[1]} = $g->get_edge_attributes(@$_)||{} for $g->edges;
+        my %n = map +($_=>$g->get_vertex_attributes($_)), $g->vertices;
+        is_deeply_snapshot [ \%n, \%e ], $expected;
     }
     SKIP: {
         skip "not making PNG as no 'expected'", 3 if !$expected;
