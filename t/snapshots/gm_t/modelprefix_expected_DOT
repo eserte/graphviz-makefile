@@ -1,12 +1,12 @@
 'digraph Perl {
  ":recipe:1" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> perl\\ prog3.pl\\ $\\<\\ \\>\\ $@\\l}" shape="record" style="filled" ]
- ":recipe:2" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> perl\\ prog1.pl\\ $\\<\\l}" shape="record" style="filled" ]
- "testdata/features.tab" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="testdata/features.tab" shape="box" style="filled" ]
- "testmodel" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="testmodel" shape="box" style="filled" ]
- "testotherfile" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="testotherfile" shape="box" style="filled" ]
  ":recipe:1" -> "testotherfile"
+ ":recipe:2" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> perl\\ prog1.pl\\ $\\<\\l}" shape="record" style="filled" ]
  ":recipe:2" -> "testdata/features.tab"
+ "testdata/features.tab" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="testdata/features.tab" shape="box" style="filled" ]
  "testdata/features.tab" -> ":recipe:1"
+ "testmodel" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="testmodel" shape="box" style="filled" ]
  "testmodel" -> ":recipe:2"
+ "testotherfile" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="testotherfile" shape="box" style="filled" ]
 }
 '

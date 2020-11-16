@@ -71,15 +71,12 @@ sub generate {
     my ($self) = @_;
     my ($nodes, $edges) = $self->generate_tree;
     my $g = $self->GraphViz;
-    $g->add_node(
-        name => $_,
-        label => graphviz_escape($_),
-        %{ $nodes->{$_} },
-    ) for sort keys %$nodes;
-    for my $edge_start (sort keys %$edges) {
-        my $sub_edges = $edges->{$edge_start};
+    for my $v (sort keys %$nodes) {
+        $g->add_node(name => $v, label => graphviz_escape($v), %{ $nodes->{$v} });
+        my $sub_edges = $edges->{$v};
+        next unless $sub_edges;
         $g->add_edge(
-            from => $edge_start,
+            from => $v,
             to => $_,
             %{ $sub_edges->{$_} },
         ) for sort keys %$sub_edges;
