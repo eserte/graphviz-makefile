@@ -88,12 +88,12 @@ for my $def (@makefile_tests) {
         my $got = [ $gm->generate_tree ];
         is_deeply_snapshot $got, $expected or diag explain $got;
     }
-    $gm->generate;
-    is_deeply_snapshot $gm->GraphViz->dot_input, "$expected DOT" if $expected;
-    my $png = eval { $gm->GraphViz->run(format=>"png")->dot_output };
     SKIP: {
-        skip("Cannot create png file: $@", 2)
-            if !$png;
+        skip "not making PNG as no 'expected'", 3 if !$expected;
+        $gm->generate;
+        is_deeply_snapshot $gm->GraphViz->dot_input, "$expected DOT";
+        my $png = eval { $gm->GraphViz->run(format=>"png")->dot_output };
+        skip "Cannot create png file: $@", 2 if !$png;
         require File::Temp;
         my ($fh, $filename) = File::Temp::tempfile(SUFFIX => ".png",
                                               UNLINK => 1);
