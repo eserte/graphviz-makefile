@@ -6,7 +6,7 @@
       'fontsize' => 8,
       'label' => [
         [
-          'perl prog1.pl $<\\l'
+          'perl prog3.pl $< > $@\\l'
         ]
       ],
       'shape' => 'record',
@@ -18,7 +18,7 @@
       'fontsize' => 8,
       'label' => [
         [
-          'perl prog3.pl $< > $@\\l'
+          'perl prog1.pl $<\\l'
         ]
       ],
       'shape' => 'record',
@@ -36,16 +36,16 @@
   },
   {
     ':recipe:1' => {
-      'data/features.tab' => {}
-    },
-    ':recipe:2' => {
       'otherfile' => {}
     },
+    ':recipe:2' => {
+      'data/features.tab' => {}
+    },
     'data/features.tab' => {
-      ':recipe:2' => {}
+      ':recipe:1' => {}
     },
     'model' => {
-      ':recipe:1' => {}
+      ':recipe:2' => {}
     }
   }
 ]

@@ -68,9 +68,8 @@ sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(global => {combine_node_and_
 sub Make     { shift->{Make} }
 
 sub generate {
-    my ($self, $target) = @_;
-    $target = "all" if !defined $target;
-    my ($nodes, $edges) = $self->generate_tree($self->{Make}->expand($target));
+    my ($self) = @_;
+    my ($nodes, $edges) = $self->generate_tree;
     my $g = $self->GraphViz;
     $g->add_node(
         name => $_,
@@ -127,58 +126,48 @@ sub _node2deps {
     }
 }
 
-# mutates $nodes and $edges
 sub generate_tree {
-    my ($self, $target, $visited, $nodes, $edges) = @_;
-    $visited ||= {};
-    return if $visited->{$target}++;
-    $nodes ||= {};
-    $edges ||= {};
-    if (!$self->{Make}->has_target($target)) {
-        warn "Can't get make target for $target\n" if $V;
-        return;
-    }
+    my ($self) = @_;
+    my (%nodes, %edges);
     my $prefix = $self->{Prefix};
-    $nodes->{$prefix.$target} ||= \%NodeStyleTarget;
-    my $make_target = $self->{Make}->target($target);
-    my @rules = @{ $make_target->rules };
-    if (!@rules) {
-        warn "No depends for target $target\n" if $V;
-        return;
-    }
-    my %to_visit;
-    for my $rule (@rules) {
-        my $rule_id;
-        if (@{$rule->recipe}) {
-            $rule_id = _gen_id($rule->recipe);
-            my $rule_label = _recipe2label($rule->recipe);
-            $nodes->{$rule_id} ||= { %NodeStyleRecipe, label => $rule_label };
-            my $port = 1;
-            for my $cmd (@{$rule->recipe}) {
-                my ($nodes2, $edges2) = ({}, {});
-                my @targets = _find_recursive_makes($self->{Make}, $cmd, $nodes2, $edges2);
-                next if !@targets;
-                $nodes->{$_} ||= $nodes2->{$_} for keys %$nodes2;
-                _add_edge($edges, $rule_id, $_, ['port'.$port, 'e']) for @targets;
-                for my $k1 (keys %$edges2) {
-                    _add_edge($edges, $k1, $_) for keys %{ $edges2->{$k1} };
-                }
-                $port++;
-            }
-        } else {
-            $rule_id = _gen_id($rule);
-            $nodes->{$rule_id} ||= \%NodeStyleRule;
+    for my $target (sort $self->{Make}->targets) {
+        $nodes{$prefix.$target} ||= \%NodeStyleTarget;
+        my $make_target = $self->{Make}->target($target);
+        my @rules = @{ $make_target->rules };
+        if (!@rules) {
+            warn "No depends for target $target\n" if $V;
+            next;
         }
-        _add_edge($edges, $prefix.$target, $rule_id);
-        _node2deps($prefix, $rule_id, $rule->prereqs, $nodes, $edges);
-        $to_visit{$_}++ for @{$rule->prereqs};
+        for my $rule (@rules) {
+            my $rule_id;
+            if (@{$rule->recipe}) {
+                $rule_id = _gen_id($rule->recipe);
+                my $rule_label = _recipe2label($rule->recipe);
+                $nodes{$rule_id} ||= { %NodeStyleRecipe, label => $rule_label };
+                my $port = 1;
+                for my $cmd (@{$rule->recipe}) {
+                    my ($nodes2, $edges2, @targets) = _find_recursive_makes($self->{Make}, $cmd);
+                    next if !@targets;
+                    $nodes{$_} ||= $nodes2->{$_} for keys %$nodes2;
+                    _add_edge(\%edges, $rule_id, $_, ['port'.$port, 'e']) for @targets;
+                    for my $k1 (keys %$edges2) {
+                        _add_edge(\%edges, $k1, $_) for keys %{ $edges2->{$k1} };
+                    }
+                    $port++;
+                }
+            } else {
+                $rule_id = _gen_id($rule);
+                $nodes{$rule_id} ||= \%NodeStyleRule;
+            }
+            _add_edge(\%edges, $prefix.$target, $rule_id);
+            _node2deps($prefix, $rule_id, $rule->prereqs, \%nodes, \%edges);
+        }
     }
-    $self->generate_tree($_, $visited, $nodes, $edges) for sort keys %to_visit;
-    ($nodes, $edges);
+    (\%nodes, \%edges);
 }
 
 sub _find_recursive_makes {
-    my ($make, $cmd, $nodes2, $edges2) = @_;
+    my ($make, $cmd) = @_;
     unless ($cmd =~ /\bcd\s+([^\s;&]+)\s*(?:;|&&)\s*make\s*(.*)/) {
         warn "can't match external make command in $cmd\n" if $V;
         return;
@@ -199,9 +188,7 @@ sub _find_recursive_makes {
     $make2->set_var(@$_) for @$vars;
     $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
     my $gm2 = GraphViz::Makefile->new(undef, $make2, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
-    my $v2 = {};
-    $gm2->generate_tree($_, $v2, $nodes2, $edges2) for @$targets;
-    map "$dir/$_", @$targets;
+    ($gm2->generate_tree, map "$dir/$_", @$targets);
 }
 
 my %GRAPHVIZ_ESCAPE = (
@@ -232,7 +219,7 @@ Output to a .png file:
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
     my $g = GraphViz2->new(global => {combine_node_and_port => 0, directed => 1});
-    my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
+    my ($nodes, $edges) = $gm->generate_tree;
     $g->add_node(
         name => $_,
         label => GraphViz::Makefile::graphviz_escape($_),
@@ -255,7 +242,7 @@ Or, using the deprecated mutation style:
 
     use GraphViz::Makefile;
     my $gm = GraphViz::Makefile->new(undef, "Makefile");
-    $gm->generate("all"); # or another makefile target
+    $gm->generate;
     $gm->GraphViz->run(format => "png", output_file => "makefile.png");
 
 =head1 DESCRIPTION
@@ -280,15 +267,13 @@ The created nodes are named C<$prefix$name>.
 
 Further arguments (specified as key-value pairs): none at present.
 
-=item generate($rule)
+=item generate
 
-Generate the graph, beginning at the named Makefile rule. If C<$rule>
-is not given, C<all> is used instead. Mutates the internal C<GraphViz2>
-object.
+Generate the graph. Mutates the internal C<GraphViz2> object.
 
-=item generate_tree($target)
+=item generate_tree
 
-    my ($nodes, $edges) = $gm->generate_tree("all"); # or another makefile target
+    my ($nodes, $edges) = $gm->generate_tree;
     $g->add_node(
         name => $_,
         label => GraphViz::Makefile::graphviz_escape($_),

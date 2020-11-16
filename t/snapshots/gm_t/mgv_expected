@@ -22,13 +22,27 @@
       'fontsize' => 8,
       'label' => [
         [
+          'echo larry\\l',
+          'echo howdy\\l'
+        ]
+      ],
+      'shape' => 'record',
+      'style' => 'filled'
+    },
+    ':recipe:4' => $VAR1->[0]{':recipe:1'},
+    ':recipe:5' => {
+      'fillcolor' => '#dddddd',
+      'fontname' => 'Monospace',
+      'fontsize' => 8,
+      'label' => [
+        [
           'echo Hi\\l'
         ]
       ],
       'shape' => 'record',
       'style' => 'filled'
     },
-    ':recipe:4' => {
+    ':recipe:6' => {
       'fillcolor' => '#dddddd',
       'fontname' => 'Monospace',
       'fontsize' => 8,
@@ -47,11 +61,14 @@
       'shape' => 'box',
       'style' => 'filled'
     },
+    'any' => $VAR1->[0]{'all'},
     'bar' => $VAR1->[0]{'all'},
     'blah' => $VAR1->[0]{'all'},
+    'blow' => $VAR1->[0]{'all'},
     'boo' => $VAR1->[0]{'all'},
     'buz' => $VAR1->[0]{'all'},
     'foo' => $VAR1->[0]{'all'},
+    'hiya' => $VAR1->[0]{'all'},
     'howdy' => $VAR1->[0]{'all'}
   },
   {
@@ -62,10 +79,18 @@
       'bar' => {}
     },
     ':recipe:3' => {
+      'foo' => {},
+      'hiya' => {}
+    },
+    ':recipe:4' => {
+      'blah' => {},
+      'blow' => {}
+    },
+    ':recipe:5' => {
       'blah' => {},
       'boo' => {}
     },
-    ':recipe:4' => {
+    ':recipe:6' => {
       'buz' => {},
       'howdy' => {}
     },
@@ -73,9 +98,13 @@
       ':recipe:1' => {},
       ':recipe:2' => {}
     },
-    'foo' => {
+    'any' => {
       ':recipe:3' => {},
       ':recipe:4' => {}
+    },
+    'foo' => {
+      ':recipe:5' => {},
+      ':recipe:6' => {}
     }
   }
 ]

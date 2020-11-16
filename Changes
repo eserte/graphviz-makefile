@@ -8,6 +8,7 @@
 - drop "reversed" mode - just give GraphViz option to reverse arrows
 - show recursive makes
 - tkgvizmakefile will only work if Tk::GraphViz installed
+- stop taking a target in generate* methods, visualise all
 
 1.18
 	- stable release with changes in 1.17_50 .. 1.17_51

@@ -29,18 +29,18 @@ $(DATA)/features.tab: otherfile
 	perl prog3.pl $< > $@
 EOF
 my @makefile_tests = (
-    [$recmake, "all", '', {}, 'recmake'],
-    ["$FindBin::RealBin/../Makefile", "all", '', {}, undef],
-    [\<<'EOF', "model", '', {}, 'model_expected'],
+    [$recmake, '', {}, 'recmake'],
+    ["$FindBin::RealBin/../Makefile", '', {}, undef],
+    [\<<'EOF', '', {}, 'model_expected'],
 model: data/features.tab
 	perl prog1.pl $<
 
 data/features.tab: otherfile
 	perl prog3.pl $< > $@
 EOF
-    [\$make_subst, "model", '', {}, 'model_expected'],
-    [\$make_subst, "model", 'test', {}, 'modelprefix_expected'],
-    [\<<'EOF', "all", '', {}, 'mgv_expected'],
+    [\$make_subst, '', {}, 'model_expected'],
+    [\$make_subst, 'test', {}, 'modelprefix_expected'],
+    [\<<'EOF', '', {}, 'mgv_expected'],
 all: foo
 all: bar
 	echo hallo perl\lib double\\l
@@ -55,7 +55,7 @@ foo:: blah boo
 foo:: howdy buz
 	echo Hey
 EOF
-    [\<<'EOF', "all", '', {}, 'mgvnorecipe_expected'],
+    [\<<'EOF', '', {}, 'mgvnorecipe_expected'],
 all: foo
 all: bar
 
@@ -73,22 +73,22 @@ EOF
 
 SKIP: {
     skip("tkgvizmakefile test only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
-    system("$^X", "-Mblib", "blib/script/tkgvizmakefile", "-reversed", "-prefix", "test-");
+    system($^X, qw(-Ilib scripts/tkgvizmakefile -reversed -prefix test-));
     is $?, 0, "Run tkgvizmakefile";
 }
 
 my $is_in_path_display = is_in_path("display");
 for my $def (@makefile_tests) {
-    my ($makefile, $target, $prefix, $extra, $expected) = @$def;
+    my ($makefile, $prefix, $extra, $expected) = @$def;
     diag "Makefile: " . join '', explain $makefile;
     GraphViz::Makefile::_reset_id();
     my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {
-        my $got = [ $gm->generate_tree($target) ];
+        my $got = [ $gm->generate_tree ];
         is_deeply_snapshot $got, $expected or diag explain $got;
     }
-    $gm->generate($target);
+    $gm->generate;
     is_deeply_snapshot $gm->GraphViz->dot_input, "$expected DOT" if $expected;
     my $png = eval { $gm->GraphViz->run(format=>"png")->dot_output };
     SKIP: {

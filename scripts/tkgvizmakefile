@@ -73,7 +73,7 @@ if (!GetOptions("f|file=s" => \$file,
 }
 my $rule = shift || "all";
 my $gm_args = {};
-my $graphviz = generate_graphviz($file, $rule, $prefix, $reversed, $gm_args);
+my $graphviz = generate_graphviz($file, $prefix, $reversed, $gm_args);
 
 if ($outputtype eq 'tkcanvas') {
     tkcanvas_output($rule, $graphviz, $prefix, $reversed, $gm_args);
@@ -83,13 +83,13 @@ if ($outputtype eq 'tkcanvas') {
 }
 
 sub generate_graphviz {
-    my ($file, $rule, $prefix, $reversed, $gm_args) = @_;
+    my ($file, $prefix, $reversed, $gm_args) = @_;
     my $gm = GraphViz::Makefile->new(undef, $file, $prefix, %$gm_args);
     my $g = GraphViz2->new(
         $reversed ? (edge => { dir => 'back' }, graph => { rankdir => 'BT' }) : (),
         global => { combine_node_and_port => 0, directed => 1 }
     );
-    my ($nodes, $edges) = $gm->generate_tree($rule);
+    my ($nodes, $edges) = $gm->generate_tree;
     $g->add_node(
         name => $_,
         label => GraphViz::Makefile::graphviz_escape($_),
@@ -114,7 +114,7 @@ sub tkcanvas_output {
     my $c;
     $mw->configure(-menu => $mw->Menu(-menuitems => [
         [Cascade => "~File", -menuitems => [
-            [Button => "~Open", -command => sub { choose_new_file($mw, $rule, $prefix, $reversed, $gm_args) }],
+            [Button => "~Open", -command => sub { choose_new_file($mw, $prefix, $reversed, $gm_args) }],
             [Button => "E~xit", -command => sub { $mw->destroy }],
         ]],
         [Cascade => "~View", -menuitems => [
@@ -151,17 +151,17 @@ sub tkcanvas_output {
     $c->itemconfigure('edge', -activefill => 'green');
     $c->pack(-fill=>"both", -expand=>1);
     $mw->Advertise(Graph => $c);
-    draw_graph($mw, $rule, $prefix, $graphviz);
+    draw_graph($mw, $graphviz);
+    my @c = $c->coords("$prefix$rule");
+    $c->idletasks;
+    $c->center_view($c[0],$c[1]);
     &Tk::MainLoop;
 }
 
 sub draw_graph {
-    my ($w, $rule, $prefix, $graphviz) = @_;
+    my ($w, $graphviz) = @_;
     my $c = $w->Subwidget("Graph");
     $c->show($graphviz);
-    my @c = $c->coords("$prefix$rule");
-    $c->idletasks;
-    $c->center_view($c[0],$c[1]);
 }
 
 sub zoom_in {
@@ -201,11 +201,11 @@ sub zoom_any {
 }
 
 sub choose_new_file {
-    my ($w, $rule, $prefix, $reversed, $gm_args) = @_;
+    my ($w, $prefix, $reversed, $gm_args) = @_;
     my $new_file = $w->getOpenFile;
     if (defined $new_file) {
-        my $graphviz = generate_graphviz($new_file, $rule, $prefix, $reversed, $gm_args);
-        draw_graph($w, $rule, $prefix, $graphviz);
+        my $graphviz = generate_graphviz($new_file, $prefix, $reversed, $gm_args);
+        draw_graph($w, $graphviz);
     }
 }
 
