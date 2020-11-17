@@ -5,7 +5,7 @@
     },
     ':recipe:2' => {
       'recipe' => [
-        'cd subdir && make',
+        'cd subdir && $(MK)',
         'say hi'
       ],
       'type' => 'recipe'

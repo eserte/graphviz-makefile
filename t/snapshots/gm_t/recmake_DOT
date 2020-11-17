@@ -2,7 +2,7 @@
  ":recipe:1" [ label="" shape="diamond" ]
  ":recipe:1" -> "bar"
  ":recipe:1" -> "sany"
- ":recipe:2" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> cd\\ subdir\\ &&\\ make\\l|<port2> say\\ hi\\l}" shape="record" style="filled" ]
+ ":recipe:2" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> cd\\ subdir\\ &&\\ $(MK)\\l|<port2> say\\ hi\\l}" shape="record" style="filled" ]
  ":recipe:2":"port1":"e" -> "subdir/all"
  ":recipe:4" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> echo\\ larry\\l|<port2> echo\\ howdy\\l}" shape="record" style="filled" ]
  ":recipe:4" -> "subdir/sbar"

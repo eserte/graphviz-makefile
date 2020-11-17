@@ -23,6 +23,9 @@ our $VERSION = '1.18';
 our $V = 0 unless defined $V;
 my @ALLOWED_ARGS = qw();
 my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
+my @RECMAKE_FINDS = (
+    \&_find_recmake_cd,
+);
 
 our %NodeStyleTarget = (
     shape     => 'box',
@@ -151,12 +154,12 @@ sub generate_graph {
         }
         for my $rule (@rules) {
             my $rule_id;
-            if (@{$rule->recipe}) {
-                $rule_id = _gen_id($rule->recipe);
-                my $recipe = $rule->recipe;
+            my $recipe = $rule->recipe;
+            if (@$recipe) {
+                $rule_id = _gen_id($recipe);
                 $g->set_vertex_attributes($rule_id, { type => 'recipe', recipe => $recipe });
                 my $line = 0;
-                for my $cmd (@$recipe) {
+                for my $cmd ($rule->exp_recipe($make_target)) {
                     my ($g2, @targets) = _find_recursive_makes($m, $cmd);
                     next if !@targets;
                     _graph_ingest($g, $g2);
@@ -178,19 +181,29 @@ sub generate_graph {
     $g;
 }
 
-sub _find_recursive_makes {
-    my ($make, $cmd) = @_;
-    unless ($cmd =~ /\bcd\s+([^\s;&]+)\s*(?:;|&&)\s*make\s*(.*)/) {
-        warn "can't match external make command in $cmd\n" if $V;
-        return;
-    }
+sub _find_recmake_cd {
+    my ($cmd) = @_;
+    return unless $cmd =~ /\bcd\s+([^\s;&]+)\s*(?:;|&&)\s*make\s*(.*)/;
     my ($dir, $makeargs) = ($1, $2);
     require Getopt::Long;
     require Text::ParseWords;
     local @ARGV = Text::ParseWords::shellwords($makeargs);
-    # XXX parse more options
     Getopt::Long::GetOptions("f=s" => \my $makefile);
     my ($vars, $targets) = Make::parse_args(@ARGV);
+    ($dir, $makefile, $vars, $targets);
+}
+
+sub _find_recursive_makes {
+    my ($make, $cmd) = @_;
+    my @rec_vars;
+    for my $rf (@RECMAKE_FINDS) {
+        last if @rec_vars = $rf->($cmd);
+    }
+    unless (@rec_vars) {
+        warn "can't match external make command in $cmd\n" if $V;
+        return;
+    }
+    my ($dir, $makefile, $vars, $targets) = @rec_vars;
     my $make2 = 'Make'->new( # quoted to not call function in this module
         FunctionPackages => $make->function_packages,
         FSFunctionMap => $make->fsmap,
