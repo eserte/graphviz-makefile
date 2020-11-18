@@ -94,13 +94,13 @@ sub _name_decode {
     } split ':', $_[0] ];
 }
 
-my %CHR2ENCODE = ("\\" => '\\\\');
+my %CHR2ENCODE = ("\\" => '\\\\', "\n" => "\\l");
 my $CHR_PAT = join '|', map quotemeta, sort keys %CHR2ENCODE;
 sub _recipe2label {
     my ($recipe) = @_;
     [
         [ map {
-            my $t = $_; $t =~ s/($CHR_PAT)/$CHR2ENCODE{$1}/g; "$t\\l";
+            my $t = $_; $t =~ s/($CHR_PAT)/$CHR2ENCODE{$1}/gs; "$t\\l";
         } @$recipe ]
     ];
 }
@@ -165,7 +165,7 @@ sub generate_graph {
             my $recipe = $rule->recipe;
             my $rule_id = _name_encode([(@$recipe ? 'recipe' : 'rule'), $prefix_target, $rule_no]);
             if (@$recipe) {
-                $g->set_vertex_attribute($rule_id, recipe => $recipe);
+                $g->set_vertex_attribute($rule_id, recipe => $rule->recipe_raw);
                 my $line = 0;
                 for my $cmd ($rule->exp_recipe($make_target)) {
                     _find_recursive_makes($m, $cmd, $prefix, $g, $line++, $rule_id, \%rec_make_seen);
