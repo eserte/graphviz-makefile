@@ -148,6 +148,7 @@ sub generate_graph {
     my ($self) = @_;
     my $prefix = $self->{Prefix};
     my $g = Graph->new;
+    my %rec_make_seen;
     my $m = $self->{Make};
     for my $target (sort $m->targets) {
         my $prefix_target = $prefix.$target;
@@ -167,12 +168,7 @@ sub generate_graph {
                 $g->set_vertex_attribute($rule_id, recipe => $recipe);
                 my $line = 0;
                 for my $cmd ($rule->exp_recipe($make_target)) {
-                    my ($g2, @targets) = _find_recursive_makes($m, $cmd, $prefix);
-                    next if !@targets;
-                    _graph_ingest($g, $g2);
-                    $g->set_edge_attribute($rule_id, $_, fromline => $line)
-                        for @targets;
-                    $line++;
+                    _find_recursive_makes($m, $cmd, $prefix, $g, $line++, $rule_id, \%rec_make_seen);
                 }
             } else {
                 $g->add_vertex($rule_id);
@@ -202,7 +198,7 @@ sub _find_recmake_cd {
 }
 
 sub _find_recursive_makes {
-    my ($make, $cmd, $prefix) = @_;
+    my ($make, $cmd, $prefix, $g, $line, $from, $cache) = @_;
     my @rec_vars;
     for my $rf (@RECMAKE_FINDS) {
         last if @rec_vars = $rf->($cmd);
@@ -218,16 +214,20 @@ sub _find_recursive_makes {
         return;
     }
     my $prefix_dir = $prefix.$dir;
-    my $make2 = 'Make'->new( # quoted to not call function in this module
-        FunctionPackages => $make->function_packages,
-        FSFunctionMap => $make->fsmap,
-        InDir => $prefix_dir,
-    );
-    $make2->parse($makefile);
-    $make2->set_var(@$_) for @$vars;
-    $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
-    my $gm2 = GraphViz::Makefile->new(undef, $make2, "$prefix_dir/"); # XXX save_pwd verwenden; -f option auswerten
-    ($gm2->generate_graph, map _name_encode(['target', "$prefix_dir/$_"]), @$targets);
+    my $cache_key = join ' ', $indir_makefile, sort map join('=', @$_), @$vars;
+    if (!$cache->{$cache_key}++) {
+        my $make2 = 'Make'->new( # quoted to not call function in this module
+            FunctionPackages => $make->function_packages,
+            FSFunctionMap => $make->fsmap,
+            InDir => $prefix_dir,
+        );
+        $make2->parse($makefile);
+        $make2->set_var(@$_) for @$vars;
+        $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
+        _graph_ingest($g, GraphViz::Makefile->new(undef, $make2, "$prefix_dir/")->generate_graph);
+    }
+    $g->set_edge_attribute($from, $_, fromline => $line)
+        for map _name_encode(['target', "$prefix_dir/$_"]), @$targets;
 }
 
 my %GRAPHVIZ_ESCAPE = (

@@ -8,8 +8,12 @@
     },
     'recipe:subdir/all:0' => {
       'recipe' => [
-        'echo larry',
-        'echo howdy'
+        'cd subsubdir && make'
+      ]
+    },
+    'recipe:subdir/subsubdir/all:0' => {
+      'recipe' => [
+        'echo L3'
       ]
     },
     'rule:all:0' => undef,
@@ -18,7 +22,8 @@
     'target:sany' => undef,
     'target:subdir/all' => undef,
     'target:subdir/sbar' => undef,
-    'target:subdir/sfoo' => undef
+    'target:subdir/sfoo' => undef,
+    'target:subdir/subsubdir/all' => undef
   },
   {
     'recipe:sany:0' => {
@@ -28,7 +33,10 @@
     },
     'recipe:subdir/all:0' => {
       'target:subdir/sbar' => {},
-      'target:subdir/sfoo' => {}
+      'target:subdir/sfoo' => {},
+      'target:subdir/subsubdir/all' => {
+        'fromline' => 0
+      }
     },
     'rule:all:0' => {
       'target:bar' => {},
@@ -42,6 +50,9 @@
     },
     'target:subdir/all' => {
       'recipe:subdir/all:0' => {}
+    },
+    'target:subdir/subsubdir/all' => {
+      'recipe:subdir/subsubdir/all:0' => {}
     }
   }
 ]

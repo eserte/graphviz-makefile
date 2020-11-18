@@ -15,7 +15,8 @@ my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
 my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
 my $recmake_fsmap = make_fsmap({
   Makefile => [ 1, "MK=make\nall: bar sany\nsany:\n\tcd subdir && \$(MK)\n\tsay hi\n"],
-  'subdir/Makefile' => [ 1, "all: sbar sfoo\n\techo larry\n\techo howdy\n" ],
+  'subdir/Makefile' => [ 1, "all: sbar sfoo\n\tcd subsubdir && make\n" ],
+  'subdir/subsubdir/Makefile' => [ 1, "all:\n\techo L3\n" ],
 });
 my $recmake = Make->new(FSFunctionMap => $recmake_fsmap);
 $recmake->parse;
@@ -73,7 +74,7 @@ EOF
 
 SKIP: {
     skip("tkgvizmakefile test only with INTERACTIVE=1 mode", 1) if !$ENV{INTERACTIVE};
-    system($^X, qw(-Ilib scripts/tkgvizmakefile -reversed -prefix test-));
+    system($^X, qw(-Ilib scripts/tkgvizmakefile));
     is $?, 0, "Run tkgvizmakefile";
 }
 
