@@ -1,35 +1,31 @@
 [
   {
-    ':recipe:1' => {
+    'recipe:data/features.tab:0' => {
       'recipe' => [
         'perl prog3.pl $< > $@'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    ':recipe:2' => {
+    'recipe:model:0' => {
       'recipe' => [
         'perl prog1.pl $<'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    'data/features.tab' => {
-      'type' => 'target'
-    },
-    'model' => $VAR1->[0]{'data/features.tab'},
-    'otherfile' => $VAR1->[0]{'data/features.tab'}
+    'target:data/features.tab' => undef,
+    'target:model' => undef,
+    'target:otherfile' => undef
   },
   {
-    ':recipe:1' => {
-      'otherfile' => {}
+    'recipe:data/features.tab:0' => {
+      'target:otherfile' => {}
     },
-    ':recipe:2' => {
-      'data/features.tab' => {}
+    'recipe:model:0' => {
+      'target:data/features.tab' => {}
     },
-    'data/features.tab' => {
-      ':recipe:1' => {}
+    'target:data/features.tab' => {
+      'recipe:data/features.tab:0' => {}
     },
-    'model' => {
-      ':recipe:2' => {}
+    'target:model' => {
+      'recipe:model:0' => {}
     }
   }
 ]

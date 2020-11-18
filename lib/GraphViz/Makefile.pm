@@ -46,8 +46,6 @@ our %NodeStyleRule = (
     label => '',
 );
 my %GRAPHVIZ_GRAPH_ARGS = (global => {directed => 1, combine_node_and_port => 0});
-my %TypeTarget = (type => 'target'); # these are so all point at same data
-my %TypeRule = (type => 'rule');
 
 sub new {
     my ($pkg, $g, $make, $prefix, %args) = @_;
@@ -78,15 +76,22 @@ sub generate {
     $self->GraphViz->from_graph(graphvizify($self->generate_graph));
 }
 
-my ($id_counter, %ref2counter);
-sub _gen_id {
-    my ($ref) = @_;
-    $ref2counter{$ref} ||= ++$id_counter;
-    ':recipe:' . $ref2counter{$ref}; # needs to be unique to that recipe
+my %NAME_QUOTING = map +($_ => sprintf "%%%02x", ord $_), qw(% :);
+my $NAME_QUOTE_CHARS = join '', '[', (map quotemeta, sort keys %NAME_QUOTING), ']';
+sub _name_encode {
+    join ':', map {
+        my $s = $_;
+        $s =~ s/($NAME_QUOTE_CHARS)/$NAME_QUOTING{$1}/gs;
+        $s
+    } @{$_[0]};
 }
-sub _reset_id {
-    undef %ref2counter;
-    $id_counter = 0;
+sub _name_decode {
+    my ($s) = @_;
+    [ map {
+        my $s = $_;
+        $s =~ s/%(..)/chr hex $1/ges;
+        $s
+    } split ':', $_[0] ];
 }
 
 my %CHR2ENCODE = ("\\" => '\\\\');
@@ -104,17 +109,17 @@ sub graphvizify {
     my ($g) = @_;
     for my $v ($g->vertices) {
         my $attrs = $g->get_vertex_attributes($v);
-        my $type = $attrs->{type};
+        my ($type, $name) = @{ _name_decode($v) };
         if ($type eq 'target') {
-            $g->set_vertex_attributes($v, { %$attrs, graphviz => {
-                label => graphviz_escape($v),
+            $g->set_vertex_attribute($v, graphviz => {
+                label => graphviz_escape($name),
                 %NodeStyleTarget,
-            } });
+            });
         } elsif ($type eq 'recipe') {
-            $g->set_vertex_attributes($v, { %$attrs, graphviz => {
+            $g->set_vertex_attribute($v, graphviz => {
                 label => _recipe2label($attrs->{recipe}),
                 %NodeStyleRecipe,
-            } });
+            });
             for my $e ($g->edges_from($v)) {
                 my $fromline = $g->get_edge_attribute(@$e, 'fromline');
                 $g->set_edge_attributes(@$e, { graphviz => {
@@ -123,7 +128,7 @@ sub graphvizify {
             }
         } else {
             # bare rule
-            $g->set_vertex_attributes($v, { %$attrs, graphviz => \%NodeStyleRule });
+            $g->set_vertex_attribute($v, graphviz => \%NodeStyleRule);
         }
     }
     $g->set_graph_attribute(graphviz => \%GRAPHVIZ_GRAPH_ARGS);
@@ -145,22 +150,24 @@ sub generate_graph {
     my $g = Graph->new;
     my $m = $self->{Make};
     for my $target (sort $m->targets) {
-        $g->set_vertex_attributes($prefix.$target, \%TypeTarget);
+        my $prefix_target = $prefix.$target;
+        my $node_name = _name_encode(['target', $prefix_target]);
+        $g->add_vertex($node_name);
         my $make_target = $m->target($target);
         my @rules = @{ $make_target->rules };
         if (!@rules) {
-            warn "No depends for target $target\n" if $V;
+            warn "No depends for target $prefix_target\n" if $V;
             next;
         }
+        my $rule_no = 0;
         for my $rule (@rules) {
-            my $rule_id;
             my $recipe = $rule->recipe;
+            my $rule_id = _name_encode([(@$recipe ? 'recipe' : 'rule'), $prefix_target, $rule_no]);
             if (@$recipe) {
-                $rule_id = _gen_id($recipe);
-                $g->set_vertex_attributes($rule_id, { type => 'recipe', recipe => $recipe });
+                $g->set_vertex_attribute($rule_id, recipe => $recipe);
                 my $line = 0;
                 for my $cmd ($rule->exp_recipe($make_target)) {
-                    my ($g2, @targets) = _find_recursive_makes($m, $cmd);
+                    my ($g2, @targets) = _find_recursive_makes($m, $cmd, $prefix);
                     next if !@targets;
                     _graph_ingest($g, $g2);
                     $g->set_edge_attribute($rule_id, $_, fromline => $line)
@@ -168,14 +175,15 @@ sub generate_graph {
                     $line++;
                 }
             } else {
-                $rule_id = _gen_id($rule);
-                $g->set_vertex_attributes($rule_id, \%TypeRule);
+                $g->add_vertex($rule_id);
             }
-            $g->add_edge($prefix.$target, $rule_id);
+            $g->add_edge($node_name, $rule_id);
             for my $dep (@{ $rule->prereqs }) {
-                $g->set_vertex_attributes($prefix.$dep, \%TypeTarget);
-                $g->add_edge($rule_id, $prefix.$dep);
+                my $dep_node = _name_encode(['target', $prefix.$dep]);
+                $g->add_vertex($dep_node);
+                $g->add_edge($rule_id, $dep_node);
             }
+            $rule_no++;
         }
     }
     $g;
@@ -194,7 +202,7 @@ sub _find_recmake_cd {
 }
 
 sub _find_recursive_makes {
-    my ($make, $cmd) = @_;
+    my ($make, $cmd, $prefix) = @_;
     my @rec_vars;
     for my $rf (@RECMAKE_FINDS) {
         last if @rec_vars = $rf->($cmd);
@@ -204,16 +212,22 @@ sub _find_recursive_makes {
         return;
     }
     my ($dir, $makefile, $vars, $targets) = @rec_vars;
+    my $indir_makefile = $make->find_makefile($makefile, $dir);
+    unless ($indir_makefile && $make->fsmap->{file_readable}->($indir_makefile)) {
+        warn "can't read external makefile '$indir_makefile' ($dir '$makefile')\n" if $V;
+        return;
+    }
+    my $prefix_dir = $prefix.$dir;
     my $make2 = 'Make'->new( # quoted to not call function in this module
         FunctionPackages => $make->function_packages,
         FSFunctionMap => $make->fsmap,
-        InDir => $dir,
+        InDir => $prefix_dir,
     );
     $make2->parse($makefile);
     $make2->set_var(@$_) for @$vars;
     $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
-    my $gm2 = GraphViz::Makefile->new(undef, $make2, "$dir/"); # XXX save_pwd verwenden; -f option auswerten
-    ($gm2->generate_graph, map "$dir/$_", @$targets);
+    my $gm2 = GraphViz::Makefile->new(undef, $make2, "$prefix_dir/"); # XXX save_pwd verwenden; -f option auswerten
+    ($gm2->generate_graph, map _name_encode(['target', "$prefix_dir/$_"]), @$targets);
 }
 
 my %GRAPHVIZ_ESCAPE = (

@@ -1,76 +1,69 @@
 [
   {
-    ':recipe:1' => {
-      'type' => 'rule'
-    },
-    ':recipe:2' => $VAR1->[0]{':recipe:1'},
-    ':recipe:3' => {
+    'recipe:any:0' => {
       'recipe' => [
         'echo larry',
         'echo howdy'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    ':recipe:4' => $VAR1->[0]{':recipe:1'},
-    ':recipe:5' => {
+    'recipe:foo:0' => {
       'recipe' => [
         'echo Hi'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    ':recipe:6' => {
+    'recipe:foo:1' => {
       'recipe' => [
         'echo Hey'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    'all' => {
-      'type' => 'target'
-    },
-    'any' => $VAR1->[0]{'all'},
-    'bar' => $VAR1->[0]{'all'},
-    'blah' => $VAR1->[0]{'all'},
-    'blow' => $VAR1->[0]{'all'},
-    'boo' => $VAR1->[0]{'all'},
-    'buz' => $VAR1->[0]{'all'},
-    'foo' => $VAR1->[0]{'all'},
-    'hiya' => $VAR1->[0]{'all'},
-    'howdy' => $VAR1->[0]{'all'}
+    'rule:all:0' => undef,
+    'rule:all:1' => undef,
+    'rule:any:1' => undef,
+    'target:all' => undef,
+    'target:any' => undef,
+    'target:bar' => undef,
+    'target:blah' => undef,
+    'target:blow' => undef,
+    'target:boo' => undef,
+    'target:buz' => undef,
+    'target:foo' => undef,
+    'target:hiya' => undef,
+    'target:howdy' => undef
   },
   {
-    ':recipe:1' => {
-      'foo' => {}
+    'recipe:any:0' => {
+      'target:foo' => {},
+      'target:hiya' => {}
     },
-    ':recipe:2' => {
-      'bar' => {}
+    'recipe:foo:0' => {
+      'target:blah' => {},
+      'target:boo' => {}
     },
-    ':recipe:3' => {
-      'foo' => {},
-      'hiya' => {}
+    'recipe:foo:1' => {
+      'target:buz' => {},
+      'target:howdy' => {}
     },
-    ':recipe:4' => {
-      'blah' => {},
-      'blow' => {}
+    'rule:all:0' => {
+      'target:foo' => {}
     },
-    ':recipe:5' => {
-      'blah' => {},
-      'boo' => {}
+    'rule:all:1' => {
+      'target:bar' => {}
     },
-    ':recipe:6' => {
-      'buz' => {},
-      'howdy' => {}
+    'rule:any:1' => {
+      'target:blah' => {},
+      'target:blow' => {}
     },
-    'all' => {
-      ':recipe:1' => {},
-      ':recipe:2' => {}
+    'target:all' => {
+      'rule:all:0' => {},
+      'rule:all:1' => {}
     },
-    'any' => {
-      ':recipe:3' => {},
-      ':recipe:4' => {}
+    'target:any' => {
+      'recipe:any:0' => {},
+      'rule:any:1' => {}
     },
-    'foo' => {
-      ':recipe:5' => {},
-      ':recipe:6' => {}
+    'target:foo' => {
+      'recipe:foo:0' => {},
+      'recipe:foo:1' => {}
     }
   }
 ]

@@ -81,7 +81,6 @@ my $is_in_path_display = is_in_path("display");
 for my $def (@makefile_tests) {
     my ($makefile, $prefix, $extra, $expected) = @$def;
     diag "Makefile: " . join '', explain $makefile;
-    GraphViz::Makefile::_reset_id();
     my $gm = GraphViz::Makefile->new(undef, $makefile, $prefix, %$extra);
     isa_ok($gm, "GraphViz::Makefile");
     if (defined $expected) {
@@ -109,6 +108,15 @@ for my $def (@makefile_tests) {
         pass("Displayed...");
     }
 }
+
+my @NAME_DATA = (
+    [ [], '' ],
+    [ [qw(node a:l%l)], 'node:a%3al%25l' ],
+);
+is GraphViz::Makefile::_name_encode($_->[0]), $_->[1], "enc to $_->[1]"
+    for @NAME_DATA;
+is_deeply GraphViz::Makefile::_name_decode($_->[1]), $_->[0], "dec $_->[1]"
+    for @NAME_DATA;
 
 done_testing;
 

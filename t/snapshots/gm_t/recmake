@@ -1,53 +1,47 @@
 [
   {
-    ':recipe:1' => {
-      'type' => 'rule'
-    },
-    ':recipe:2' => {
+    'recipe:sany:0' => {
       'recipe' => [
         'cd subdir && $(MK)',
         'say hi'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    ':recipe:3' => {
+    'recipe:subdir/all:0' => {
       'recipe' => [
         'echo larry',
         'echo howdy'
-      ],
-      'type' => 'recipe'
+      ]
     },
-    'all' => {
-      'type' => 'target'
-    },
-    'bar' => $VAR1->[0]{'all'},
-    'sany' => $VAR1->[0]{'all'},
-    'subdir/all' => $VAR1->[0]{'all'},
-    'subdir/sbar' => $VAR1->[0]{'all'},
-    'subdir/sfoo' => $VAR1->[0]{'all'}
+    'rule:all:0' => undef,
+    'target:all' => undef,
+    'target:bar' => undef,
+    'target:sany' => undef,
+    'target:subdir/all' => undef,
+    'target:subdir/sbar' => undef,
+    'target:subdir/sfoo' => undef
   },
   {
-    ':recipe:1' => {
-      'bar' => {},
-      'sany' => {}
-    },
-    ':recipe:2' => {
-      'subdir/all' => {
+    'recipe:sany:0' => {
+      'target:subdir/all' => {
         'fromline' => 0
       }
     },
-    ':recipe:3' => {
-      'subdir/sbar' => {},
-      'subdir/sfoo' => {}
+    'recipe:subdir/all:0' => {
+      'target:subdir/sbar' => {},
+      'target:subdir/sfoo' => {}
     },
-    'all' => {
-      ':recipe:1' => {}
+    'rule:all:0' => {
+      'target:bar' => {},
+      'target:sany' => {}
     },
-    'sany' => {
-      ':recipe:2' => {}
+    'target:all' => {
+      'rule:all:0' => {}
     },
-    'subdir/all' => {
-      ':recipe:3' => {}
+    'target:sany' => {
+      'recipe:sany:0' => {}
+    },
+    'target:subdir/all' => {
+      'recipe:subdir/all:0' => {}
     }
   }
 ]

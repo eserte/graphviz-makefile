@@ -1,20 +1,20 @@
 'digraph Perl {
- ":recipe:1" [ label="" shape="diamond" ]
- ":recipe:1" -> "bar"
- ":recipe:1" -> "sany"
- ":recipe:2" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> cd\\ subdir\\ &&\\ $(MK)\\l|<port2> say\\ hi\\l}" shape="record" style="filled" ]
- ":recipe:2":"port1":"e" -> "subdir/all"
- ":recipe:4" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> echo\\ larry\\l|<port2> echo\\ howdy\\l}" shape="record" style="filled" ]
- ":recipe:4" -> "subdir/sbar"
- ":recipe:4" -> "subdir/sfoo"
- "all" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="all" shape="box" style="filled" ]
- "all" -> ":recipe:1"
- "bar" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="bar" shape="box" style="filled" ]
- "sany" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="sany" shape="box" style="filled" ]
- "sany" -> ":recipe:2"
- "subdir/all" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="subdir/all" shape="box" style="filled" ]
- "subdir/all" -> ":recipe:4"
- "subdir/sbar" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="subdir/sbar" shape="box" style="filled" ]
- "subdir/sfoo" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="subdir/sfoo" shape="box" style="filled" ]
+ "recipe:sany:0" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> cd\\ subdir\\ &&\\ $(MK)\\l|<port2> say\\ hi\\l}" shape="record" style="filled" ]
+ "recipe:sany:0":"port1":"e" -> "target:subdir/all"
+ "recipe:subdir/all:0" [ fillcolor="#dddddd" fontname="Monospace" fontsize="8" label="{<port1> echo\\ larry\\l|<port2> echo\\ howdy\\l}" shape="record" style="filled" ]
+ "recipe:subdir/all:0" -> "target:subdir/sbar"
+ "recipe:subdir/all:0" -> "target:subdir/sfoo"
+ "rule:all:0" [ label="" shape="diamond" ]
+ "rule:all:0" -> "target:bar"
+ "rule:all:0" -> "target:sany"
+ "target:all" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="all" shape="box" style="filled" ]
+ "target:all" -> "rule:all:0"
+ "target:bar" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="bar" shape="box" style="filled" ]
+ "target:sany" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="sany" shape="box" style="filled" ]
+ "target:sany" -> "recipe:sany:0"
+ "target:subdir/all" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="subdir/all" shape="box" style="filled" ]
+ "target:subdir/all" -> "recipe:subdir/all:0"
+ "target:subdir/sbar" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="subdir/sbar" shape="box" style="filled" ]
+ "target:subdir/sfoo" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="subdir/sfoo" shape="box" style="filled" ]
 }
 '
