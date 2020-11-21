@@ -25,6 +25,7 @@ jobs:
       - name: Install Graphviz, Perl and dependencies
         run: |
           apt-get -y update && apt-get -y install graphviz
+          cpanm -n App::Prove~3.00 # parallel tests
           cpanm -n --installdeps .
       - run: perl -V
       - name: Run release tests # before others as may install useful stuff
