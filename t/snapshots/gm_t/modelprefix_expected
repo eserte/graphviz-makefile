@@ -1,11 +1,11 @@
 [
   {
-    'recipe:testdata/features.tab:0' => {
+    'rule:testdata/features.tab:0' => {
       'recipe' => [
         'perl prog3.pl $< > $@'
       ]
     },
-    'recipe:testmodel:0' => {
+    'rule:testmodel:0' => {
       'recipe' => [
         'perl prog1.pl $<'
       ]
@@ -15,17 +15,17 @@
     'target:testotherfile' => undef
   },
   {
-    'recipe:testdata/features.tab:0' => {
+    'rule:testdata/features.tab:0' => {
       'target:testotherfile' => {}
     },
-    'recipe:testmodel:0' => {
+    'rule:testmodel:0' => {
       'target:testdata/features.tab' => {}
     },
     'target:testdata/features.tab' => {
-      'recipe:testdata/features.tab:0' => {}
+      'rule:testdata/features.tab:0' => {}
     },
     'target:testmodel' => {
-      'recipe:testmodel:0' => {}
+      'rule:testmodel:0' => {}
     }
   }
 ]

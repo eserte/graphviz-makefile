@@ -1,24 +1,30 @@
 [
   {
-    'recipe:any:0' => {
+    'rule:all:0' => {
+      'recipe' => []
+    },
+    'rule:all:1' => {
+      'recipe' => []
+    },
+    'rule:any:0' => {
       'recipe' => [
         'echo larry',
         'echo howdy'
       ]
     },
-    'recipe:foo:0' => {
+    'rule:any:1' => {
+      'recipe' => []
+    },
+    'rule:foo:0' => {
       'recipe' => [
         'echo Hi'
       ]
     },
-    'recipe:foo:1' => {
+    'rule:foo:1' => {
       'recipe' => [
         'echo Hey'
       ]
     },
-    'rule:all:0' => undef,
-    'rule:all:1' => undef,
-    'rule:any:1' => undef,
     'target:all' => undef,
     'target:any' => undef,
     'target:bar' => undef,
@@ -31,39 +37,39 @@
     'target:howdy' => undef
   },
   {
-    'recipe:any:0' => {
-      'target:foo' => {},
-      'target:hiya' => {}
-    },
-    'recipe:foo:0' => {
-      'target:blah' => {},
-      'target:boo' => {}
-    },
-    'recipe:foo:1' => {
-      'target:buz' => {},
-      'target:howdy' => {}
-    },
     'rule:all:0' => {
       'target:foo' => {}
     },
     'rule:all:1' => {
       'target:bar' => {}
     },
+    'rule:any:0' => {
+      'target:foo' => {},
+      'target:hiya' => {}
+    },
     'rule:any:1' => {
       'target:blah' => {},
       'target:blow' => {}
+    },
+    'rule:foo:0' => {
+      'target:blah' => {},
+      'target:boo' => {}
+    },
+    'rule:foo:1' => {
+      'target:buz' => {},
+      'target:howdy' => {}
     },
     'target:all' => {
       'rule:all:0' => {},
       'rule:all:1' => {}
     },
     'target:any' => {
-      'recipe:any:0' => {},
+      'rule:any:0' => {},
       'rule:any:1' => {}
     },
     'target:foo' => {
-      'recipe:foo:0' => {},
-      'recipe:foo:1' => {}
+      'rule:foo:0' => {},
+      'rule:foo:1' => {}
     }
   }
 ]

@@ -117,21 +117,23 @@ sub graphvizify {
                 label => graphviz_escape($name),
                 %NodeStyleTarget,
             });
-        } elsif ($type eq 'recipe') {
+        } else {
             my $recipe = $attrs->{recipe};
+            if (!@$recipe) {
+                # bare rule
+                $gvg->set_vertex_attribute($v, graphviz => \%NodeStyleRule);
+                next;
+            }
             $gvg->set_vertex_attribute($v, graphviz => {
                 label => _recipe2label($recipe),
                 %NodeStyleRecipe,
             });
             for my $e ($g->edges_from($v)) {
-                my $fromline = $g->get_edge_attribute(@$e, 'fromline');
+                next if !defined(my $fromline = $g->get_edge_attribute(@$e, 'fromline'));
                 $gvg->set_edge_attributes(@$e, { graphviz => {
                     tailport => ['port' . ($fromline+1), 'e'],
-                } }) if defined $fromline;
+                } });
             }
-        } else {
-            # bare rule
-            $gvg->set_vertex_attribute($v, graphviz => \%NodeStyleRule);
         }
     }
     $gvg->set_graph_attribute(graphviz => \%GRAPHVIZ_GRAPH_ARGS);
@@ -165,17 +167,15 @@ sub generate_graph {
         }
         my $rule_no = 0;
         for my $rule (@rules) {
-            my $recipe = $rule->recipe;
+            my $recipe = $rule->recipe_raw;
             my $rule_id = $recipe_cache{$recipe} || ($recipe_cache{$recipe} =
-                _name_encode([(@$recipe ? 'recipe' : 'rule'), $prefix_target, $rule_no]));
+                _name_encode(['rule', $prefix_target, $rule_no]));
+            $g->set_vertex_attribute($rule_id, recipe => $recipe);
             if (@$recipe) {
-                $g->set_vertex_attribute($rule_id, recipe => $rule->recipe_raw);
                 my $line = 0;
                 for my $cmd ($rule->exp_recipe($make_target)) {
                     _find_recursive_makes($m, $cmd, $prefix, $g, $line++, $rule_id, \%rec_make_seen);
                 }
-            } else {
-                $g->add_vertex($rule_id);
             }
             $g->add_edge($node_name, $rule_id);
             for my $dep (@{ $rule->prereqs }) {
