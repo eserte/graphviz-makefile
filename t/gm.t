@@ -110,15 +110,6 @@ for my $def (@makefile_tests) {
     }
 }
 
-my @NAME_DATA = (
-    [ [], '' ],
-    [ [qw(node a:l%l)], 'node:a%3al%25l' ],
-);
-is GraphViz::Makefile::_name_encode($_->[0]), $_->[1], "enc to $_->[1]"
-    for @NAME_DATA;
-is_deeply GraphViz::Makefile::_name_decode($_->[1]), $_->[0], "dec $_->[1]"
-    for @NAME_DATA;
-
 done_testing;
 
 sub make_fsmap {

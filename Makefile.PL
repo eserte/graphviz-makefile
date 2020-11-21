@@ -21,7 +21,7 @@ WriteMakefile(
   EXE_FILES => [ glob 'scripts/*' ],
   PREREQ_PM => {
     'GraphViz2' => '2.62', # fixed label-quoting
-    'Make' => '2.007', # Rule.recipe_raw method
+    'Make' => '2.008', # Make.name_encode etc
     'Graph' => '0.9708', # rename_vertex method
   },
   TEST_REQUIRES => {

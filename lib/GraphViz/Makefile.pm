@@ -76,24 +76,6 @@ sub generate {
     $self->GraphViz->from_graph(graphvizify($self->generate_graph));
 }
 
-my %NAME_QUOTING = map +($_ => sprintf "%%%02x", ord $_), qw(% :);
-my $NAME_QUOTE_CHARS = join '', '[', (map quotemeta, sort keys %NAME_QUOTING), ']';
-sub _name_encode {
-    join ':', map {
-        my $s = $_;
-        $s =~ s/($NAME_QUOTE_CHARS)/$NAME_QUOTING{$1}/gs;
-        $s
-    } @{$_[0]};
-}
-sub _name_decode {
-    my ($s) = @_;
-    [ map {
-        my $s = $_;
-        $s =~ s/%(..)/chr hex $1/ges;
-        $s
-    } split ':', $_[0] ];
-}
-
 my %CHR2ENCODE = ("\\" => '\\\\', "\n" => "\\l");
 my $CHR_PAT = join '|', map quotemeta, sort keys %CHR2ENCODE;
 sub _recipe2label {
@@ -110,7 +92,7 @@ sub graphvizify {
     my $gvg = Graph->new;
     for my $v ($g->vertices) {
         my $attrs = $g->get_vertex_attributes($v);
-        my ($type, $name) = @{ _name_decode($v) };
+        my ($type, $name) = @{ Make::name_decode($v) };
         $gvg->add_edge(@$_) for $g->edges_from($v);
         if ($type eq 'target') {
             $gvg->set_vertex_attribute($v, graphviz => {
@@ -152,47 +134,19 @@ sub _graph_ingest {
 sub generate_graph {
     my ($self) = @_;
     my $prefix = $self->{Prefix};
-    my $g = Graph->new;
-    my %recipe_cache;
-    my $m = $self->{Make};
-    for my $target (sort $m->targets) {
-        my $node_name = _name_encode(['target', $target]);
-        $g->add_vertex($node_name);
-        my $make_target = $m->target($target);
-        my @rules = @{ $make_target->rules };
-        if (!@rules) {
-            warn "No depends for target $target\n" if $V;
-            next;
-        }
-        my $rule_no = 0;
-        for my $rule (@rules) {
-            my $recipe = $rule->recipe;
-            my $rule_id = $recipe_cache{$recipe} || ($recipe_cache{$recipe} =
-                _name_encode(['rule', $target, $rule_no]));
-            $g->set_vertex_attributes($rule_id, {
-                recipe => $recipe, recipe_raw => $rule->recipe_raw,
-            });
-            $g->add_edge($node_name, $rule_id);
-            for my $dep (@{ $rule->prereqs }) {
-                my $dep_node = _name_encode(['target', $dep]);
-                $g->add_vertex($dep_node);
-                $g->add_edge($rule_id, $dep_node);
-            }
-            $rule_no++;
-        }
-    }
+    my $g = $self->{Make}->as_graph;
     $g->rename_vertices(sub {
-        my ($type, $name, @other) = @{ _name_decode($_[0]) };
-        _name_encode([ $type, $prefix.$name, @other ]);
+        my ($type, $name, @other) = @{ Make::name_decode($_[0]) };
+        Make::name_encode([ $type, $prefix.$name, @other ]);
     });
-    _recmake_get($g, $m, $prefix);
+    _recmake_get($g, $self->{Make}, $prefix);
     $g;
 }
 
 sub _recmake_get {
     my ($g, $m, $prefix) = @_;
     my %seen;
-    for my $t (grep $_->[1] eq 'rule', map [ $_, @{ _name_decode($_) } ], $g->vertices) {
+    for my $t (grep $_->[1] eq 'rule', map [ $_, @{ Make::name_decode($_) } ], $g->vertices) {
         my ($v, $type, $canonical_target_name, $rule_index) = @$t;
         my $attrs = $g->get_vertex_attributes($v);
         my $recipe = $attrs->{recipe};
@@ -249,7 +203,7 @@ sub _find_recursive_makes {
         _graph_ingest($g, GraphViz::Makefile->new(undef, $make2, "$prefix_dir/")->generate_graph);
     }
     $g->set_edge_attribute($from, $_, fromline => $line)
-        for map _name_encode(['target', "$prefix_dir/$_"]), @$targets;
+        for map Make::name_encode(['target', "$prefix_dir/$_"]), @$targets;
 }
 
 my %GRAPHVIZ_ESCAPE = (
