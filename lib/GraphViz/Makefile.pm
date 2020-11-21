@@ -107,32 +107,35 @@ sub _recipe2label {
 
 sub graphvizify {
     my ($g) = @_;
+    my $gvg = Graph->new;
     for my $v ($g->vertices) {
         my $attrs = $g->get_vertex_attributes($v);
         my ($type, $name) = @{ _name_decode($v) };
+        $gvg->add_edge(@$_) for $g->edges_from($v);
         if ($type eq 'target') {
-            $g->set_vertex_attribute($v, graphviz => {
+            $gvg->set_vertex_attribute($v, graphviz => {
                 label => graphviz_escape($name),
                 %NodeStyleTarget,
             });
         } elsif ($type eq 'recipe') {
-            $g->set_vertex_attribute($v, graphviz => {
-                label => _recipe2label($attrs->{recipe}),
+            my $recipe = $attrs->{recipe};
+            $gvg->set_vertex_attribute($v, graphviz => {
+                label => _recipe2label($recipe),
                 %NodeStyleRecipe,
             });
             for my $e ($g->edges_from($v)) {
                 my $fromline = $g->get_edge_attribute(@$e, 'fromline');
-                $g->set_edge_attributes(@$e, { graphviz => {
+                $gvg->set_edge_attributes(@$e, { graphviz => {
                     tailport => ['port' . ($fromline+1), 'e'],
                 } }) if defined $fromline;
             }
         } else {
             # bare rule
-            $g->set_vertex_attribute($v, graphviz => \%NodeStyleRule);
+            $gvg->set_vertex_attribute($v, graphviz => \%NodeStyleRule);
         }
     }
-    $g->set_graph_attribute(graphviz => \%GRAPHVIZ_GRAPH_ARGS);
-    $g;
+    $gvg->set_graph_attribute(graphviz => \%GRAPHVIZ_GRAPH_ARGS);
+    $gvg;
 }
 
 sub _graph_ingest {
@@ -330,10 +333,10 @@ given in the visualisation.
 
 =head2 graphvizify
 
-    GraphViz::Makefile::graphvizify($graph);
+    my $gv_graph = GraphViz::Makefile::graphvizify($make_graph);
 
-Adds attributes to the given L<Graph> object of a makefile, to make it
-be visualised well using L<GraphViz2/from_graph>.
+Given a L<Graph> object representing a makefile, creates a new object
+to visualise it using L<GraphViz2/from_graph>.
 
 =head1 ALTERNATIVES
 
