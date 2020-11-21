@@ -154,9 +154,8 @@ sub _recmake_get {
         my $rule = $make_target->rules->[$rule_index];
         if (@$recipe) {
             my $line = 0;
-            for my $cmd ($rule->exp_recipe($make_target)) {
-                _find_recursive_makes($m, $cmd, $prefix, $g, $line++, $v, \%seen);
-            }
+            _find_recursive_makes($m, $_, $prefix, $g, $line++, $v, \%seen)
+                for $rule->exp_recipe($make_target);
         }
     }
 }

@@ -11,8 +11,6 @@ use File::Spec::Functions qw(file_name_is_absolute);
 use Test::More;
 use Test::Snapshot;
 
-my $node_target = \%GraphViz::Makefile::NodeStyleTarget;
-my $node_recipe = \%GraphViz::Makefile::NodeStyleRecipe;
 my $recmake_fsmap = make_fsmap({
   Makefile => [ 1, "MK=make\nall: bar sany\nsany:\n\tcd subdir && \$(MK)\n\tsay hi\n"],
   'subdir/Makefile' => [ 1, "all: sbar sfoo\n\tcd subsubdir && make\n" ],
