@@ -31,5 +31,7 @@
  "target:foo" -> "recipe:foo:1"
  "target:hiya" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="hiya" shape="box" style="filled" ]
  "target:howdy" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="howdy" shape="box" style="filled" ]
+ "target:second" [ fillcolor="#ffff99" fontname="Arial" fontsize="10" label="second" shape="box" style="filled" ]
+ "target:second" -> "recipe:any:0"
 }
 '

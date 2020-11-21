@@ -148,7 +148,7 @@ sub generate_graph {
     my ($self) = @_;
     my $prefix = $self->{Prefix};
     my $g = Graph->new;
-    my %rec_make_seen;
+    my (%rec_make_seen, %recipe_cache);
     my $m = $self->{Make};
     for my $target (sort $m->targets) {
         my $prefix_target = $prefix.$target;
@@ -163,7 +163,8 @@ sub generate_graph {
         my $rule_no = 0;
         for my $rule (@rules) {
             my $recipe = $rule->recipe;
-            my $rule_id = _name_encode([(@$recipe ? 'recipe' : 'rule'), $prefix_target, $rule_no]);
+            my $rule_id = $recipe_cache{$recipe} || ($recipe_cache{$recipe} =
+                _name_encode([(@$recipe ? 'recipe' : 'rule'), $prefix_target, $rule_no]));
             if (@$recipe) {
                 $g->set_vertex_attribute($rule_id, recipe => $rule->recipe_raw);
                 my $line = 0;

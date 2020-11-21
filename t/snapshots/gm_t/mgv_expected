@@ -32,7 +32,8 @@
     'target:buz' => undef,
     'target:foo' => undef,
     'target:hiya' => undef,
-    'target:howdy' => undef
+    'target:howdy' => undef,
+    'target:second' => undef
   },
   {
     'recipe:all:1' => {
@@ -68,6 +69,9 @@
     'target:foo' => {
       'recipe:foo:0' => {},
       'recipe:foo:1' => {}
+    },
+    'target:second' => {
+      'recipe:any:0' => {}
     }
   }
 ]

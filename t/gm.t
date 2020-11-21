@@ -46,7 +46,7 @@ all: foo
 all: bar
 	echo hallo perl\lib double\\l
 
-any: foo hiya
+any second: foo hiya
 	echo larry
 	echo howdy
 any: blah blow
