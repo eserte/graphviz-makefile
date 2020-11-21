@@ -156,32 +156,35 @@ sub generate_graph {
     my %recipe_cache;
     my $m = $self->{Make};
     for my $target (sort $m->targets) {
-        my $prefix_target = $prefix.$target;
-        my $node_name = _name_encode(['target', $prefix_target]);
+        my $node_name = _name_encode(['target', $target]);
         $g->add_vertex($node_name);
         my $make_target = $m->target($target);
         my @rules = @{ $make_target->rules };
         if (!@rules) {
-            warn "No depends for target $prefix_target\n" if $V;
+            warn "No depends for target $target\n" if $V;
             next;
         }
         my $rule_no = 0;
         for my $rule (@rules) {
             my $recipe = $rule->recipe;
             my $rule_id = $recipe_cache{$recipe} || ($recipe_cache{$recipe} =
-                _name_encode(['rule', $prefix_target, $rule_no]));
+                _name_encode(['rule', $target, $rule_no]));
             $g->set_vertex_attributes($rule_id, {
                 recipe => $recipe, recipe_raw => $rule->recipe_raw,
             });
             $g->add_edge($node_name, $rule_id);
             for my $dep (@{ $rule->prereqs }) {
-                my $dep_node = _name_encode(['target', $prefix.$dep]);
+                my $dep_node = _name_encode(['target', $dep]);
                 $g->add_vertex($dep_node);
                 $g->add_edge($rule_id, $dep_node);
             }
             $rule_no++;
         }
     }
+    $g->rename_vertices(sub {
+        my ($type, $name, @other) = @{ _name_decode($_[0]) };
+        _name_encode([ $type, $prefix.$name, @other ]);
+    });
     _recmake_get($g, $m, $prefix);
     $g;
 }
