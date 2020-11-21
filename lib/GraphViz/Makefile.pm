@@ -23,9 +23,6 @@ our $VERSION = '1.18';
 our $V = 0 unless defined $V;
 my @ALLOWED_ARGS = qw();
 my %ALLOWED_ARGS = map {($_,undef)} @ALLOWED_ARGS;
-my @RECMAKE_FINDS = (
-    \&_find_recmake_cd,
-);
 
 our %NodeStyleTarget = (
     shape     => 'box',
@@ -122,87 +119,14 @@ sub graphvizify {
     $gvg;
 }
 
-sub _graph_ingest {
-    my ($g, $g2) = @_;
-    for my $v ($g2->vertices) {
-        $g->set_vertex_attributes($v, $g2->get_vertex_attributes($v));
-        $g->set_edge_attributes(@$_, $g2->get_edge_attributes(@$_))
-            for $g2->edges_from($v);
-    }
-}
-
 sub generate_graph {
     my ($self) = @_;
     my $prefix = $self->{Prefix};
-    my $g = $self->{Make}->as_graph;
+    my $g = $self->{Make}->as_graph(recursive_make => 1);
     $g->rename_vertices(sub {
         my ($type, $name, @other) = @{ Make::name_decode($_[0]) };
         Make::name_encode([ $type, $prefix.$name, @other ]);
     });
-    _recmake_get($g, $self->{Make}, $prefix);
-    $g;
-}
-
-sub _recmake_get {
-    my ($g, $m, $prefix) = @_;
-    my %seen;
-    for my $t (grep $_->[1] eq 'rule', map [ $_, @{ Make::name_decode($_) } ], $g->vertices) {
-        my ($v, $type, $canonical_target_name, $rule_index) = @$t;
-        my $attrs = $g->get_vertex_attributes($v);
-        my $recipe = $attrs->{recipe};
-        my $make_target = $m->target(substr $canonical_target_name, length $prefix);
-        my $rule = $make_target->rules->[$rule_index];
-        if (@$recipe) {
-            my $line = 0;
-            _find_recursive_makes($m, $_, $prefix, $g, $line++, $v, \%seen)
-                for $rule->exp_recipe($make_target);
-        }
-    }
-}
-
-sub _find_recmake_cd {
-    my ($cmd) = @_;
-    return unless $cmd =~ /\bcd\s+([^\s;&]+)\s*(?:;|&&)\s*make\s*(.*)/;
-    my ($dir, $makeargs) = ($1, $2);
-    require Getopt::Long;
-    require Text::ParseWords;
-    local @ARGV = Text::ParseWords::shellwords($makeargs);
-    Getopt::Long::GetOptions("f=s" => \my $makefile);
-    my ($vars, $targets) = Make::parse_args(@ARGV);
-    ($dir, $makefile, $vars, $targets);
-}
-
-sub _find_recursive_makes {
-    my ($make, $cmd, $prefix, $g, $line, $from, $cache) = @_;
-    my @rec_vars;
-    for my $rf (@RECMAKE_FINDS) {
-        last if @rec_vars = $rf->($cmd);
-    }
-    unless (@rec_vars) {
-        warn "can't match external make command in $cmd\n" if $V;
-        return;
-    }
-    my ($dir, $makefile, $vars, $targets) = @rec_vars;
-    my $indir_makefile = $make->find_makefile($makefile, $dir);
-    unless ($indir_makefile && $make->fsmap->{file_readable}->($indir_makefile)) {
-        warn "can't read external makefile '$indir_makefile' ($dir '$makefile')\n" if $V;
-        return;
-    }
-    my $prefix_dir = $prefix.$dir;
-    my $cache_key = join ' ', $indir_makefile, sort map join('=', @$_), @$vars;
-    if (!$cache->{$cache_key}++) {
-        my $make2 = 'Make'->new( # quoted to not call function in this module
-            FunctionPackages => $make->function_packages,
-            FSFunctionMap => $make->fsmap,
-            InDir => $prefix_dir,
-        );
-        $make2->parse($makefile);
-        $make2->set_var(@$_) for @$vars;
-        $targets = [ $make2->{Vars}{'.DEFAULT_GOAL'} ] unless @$targets;
-        _graph_ingest($g, GraphViz::Makefile->new(undef, $make2, "$prefix_dir/")->generate_graph);
-    }
-    $g->set_edge_attribute($from, $_, fromline => $line)
-        for map Make::name_encode(['target', "$prefix_dir/$_"]), @$targets;
 }
 
 my %GRAPHVIZ_ESCAPE = (
@@ -218,7 +142,6 @@ sub graphviz_escape {
 }
 
 1;
-
 
 __END__
 

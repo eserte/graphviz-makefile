@@ -134,6 +134,7 @@ sub make_fsmap {
         fh_write      => sub { my $fh = shift; $fh2file_tuple{$fh}[0] = time; print {$fh} @_ },
         file_readable => sub { exists $vfs->{ $_[0] } },
         mtime         => sub { ( $vfs->{ $_[0] } || [] )->[0] },
+        is_abs        => sub { $_[0] =~ /^\// },
     };
 }
 
