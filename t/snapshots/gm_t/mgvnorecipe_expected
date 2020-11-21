@@ -1,27 +1,40 @@
 [
   {
     'rule:all:0' => {
-      'recipe' => []
+      'recipe' => [],
+      'recipe_raw' => []
     },
     'rule:all:1' => {
-      'recipe' => []
+      'recipe' => [],
+      'recipe_raw' => []
     },
     'rule:any:0' => {
       'recipe' => [
         'echo larry',
         'echo howdy'
+      ],
+      'recipe_raw' => [
+        'echo larry',
+        'echo howdy'
       ]
     },
     'rule:any:1' => {
-      'recipe' => []
+      'recipe' => [],
+      'recipe_raw' => []
     },
     'rule:foo:0' => {
       'recipe' => [
+        'echo Hi'
+      ],
+      'recipe_raw' => [
         'echo Hi'
       ]
     },
     'rule:foo:1' => {
       'recipe' => [
+        'echo Hey'
+      ],
+      'recipe_raw' => [
         'echo Hey'
       ]
     },

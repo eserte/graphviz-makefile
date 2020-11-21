@@ -118,14 +118,14 @@ sub graphvizify {
                 %NodeStyleTarget,
             });
         } else {
-            my $recipe = $attrs->{recipe};
-            if (!@$recipe) {
+            my $recipe_raw = $attrs->{recipe_raw};
+            if (!@$recipe_raw) {
                 # bare rule
                 $gvg->set_vertex_attribute($v, graphviz => \%NodeStyleRule);
                 next;
             }
             $gvg->set_vertex_attribute($v, graphviz => {
-                label => _recipe2label($recipe),
+                label => _recipe2label($recipe_raw),
                 %NodeStyleRecipe,
             });
             for my $e ($g->edges_from($v)) {
@@ -153,7 +153,7 @@ sub generate_graph {
     my ($self) = @_;
     my $prefix = $self->{Prefix};
     my $g = Graph->new;
-    my (%rec_make_seen, %recipe_cache);
+    my %recipe_cache;
     my $m = $self->{Make};
     for my $target (sort $m->targets) {
         my $prefix_target = $prefix.$target;
@@ -167,16 +167,12 @@ sub generate_graph {
         }
         my $rule_no = 0;
         for my $rule (@rules) {
-            my $recipe = $rule->recipe_raw;
+            my $recipe = $rule->recipe;
             my $rule_id = $recipe_cache{$recipe} || ($recipe_cache{$recipe} =
                 _name_encode(['rule', $prefix_target, $rule_no]));
-            $g->set_vertex_attribute($rule_id, recipe => $recipe);
-            if (@$recipe) {
-                my $line = 0;
-                for my $cmd ($rule->exp_recipe($make_target)) {
-                    _find_recursive_makes($m, $cmd, $prefix, $g, $line++, $rule_id, \%rec_make_seen);
-                }
-            }
+            $g->set_vertex_attributes($rule_id, {
+                recipe => $recipe, recipe_raw => $rule->recipe_raw,
+            });
             $g->add_edge($node_name, $rule_id);
             for my $dep (@{ $rule->prereqs }) {
                 my $dep_node = _name_encode(['target', $prefix.$dep]);
@@ -186,7 +182,26 @@ sub generate_graph {
             $rule_no++;
         }
     }
+    _recmake_get($g, $m, $prefix);
     $g;
+}
+
+sub _recmake_get {
+    my ($g, $m, $prefix) = @_;
+    my %seen;
+    for my $t (grep $_->[1] eq 'rule', map [ $_, @{ _name_decode($_) } ], $g->vertices) {
+        my ($v, $type, $canonical_target_name, $rule_index) = @$t;
+        my $attrs = $g->get_vertex_attributes($v);
+        my $recipe = $attrs->{recipe};
+        my $make_target = $m->target(substr $canonical_target_name, length $prefix);
+        my $rule = $make_target->rules->[$rule_index];
+        if (@$recipe) {
+            my $line = 0;
+            for my $cmd ($rule->exp_recipe($make_target)) {
+                _find_recursive_makes($m, $cmd, $prefix, $g, $line++, $v, \%seen);
+            }
+        }
+    }
 }
 
 sub _find_recmake_cd {

@@ -3,10 +3,16 @@
     'rule:testdata/features.tab:0' => {
       'recipe' => [
         'perl prog3.pl $< > $@'
+      ],
+      'recipe_raw' => [
+        'perl prog3.pl $< > $@'
       ]
     },
     'rule:testmodel:0' => {
       'recipe' => [
+        'perl prog1.pl $<'
+      ],
+      'recipe_raw' => [
         'perl prog1.pl $<'
       ]
     },
