@@ -127,7 +127,7 @@ sub tkcanvas_output {
         ]],
     ]));
     $mw->bind('<Key-q>' => [$mw, 'destroy']);
-    $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe");
+    $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe", -background => 'white');
     $c->createBindings;
     $c->bind('node', '<Button-1>', sub {
         my @tags = $c->gettags('current');
