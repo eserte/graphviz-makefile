@@ -79,6 +79,11 @@ if ($outputtype eq 'tkcanvas') {
     tkcanvas_output($rule, $graphviz, $prefix, $reversed, $gm_args);
 } else {
     die "-o is missing" if !defined $outputfile;
+    if ($outputtype eq 'canon') {
+        open my $fh, '>', $outputfile or die "$outputfile: $!";
+        print $fh $graphviz->dot_input;
+        exit;
+    }
     $graphviz->run(format => $outputtype, output_file => $outputfile);
 }
 
