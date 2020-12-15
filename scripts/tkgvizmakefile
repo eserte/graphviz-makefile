@@ -103,36 +103,7 @@ sub tkcanvas_output {
     require Tk;
     require Tk::GraphViz;
     my $mw = MainWindow->new;
-    my $c;
-    $mw->configure(-menu => $mw->Menu(-menuitems => [
-        [Cascade => "~File", -menuitems => [
-            [Button => "~Open", -command => sub { choose_new_file($mw, $prefix, $reversed, $gm_args) }],
-            [Button => "E~xit", -command => sub { $mw->destroy }],
-        ]],
-        [Cascade => "~View", -menuitems => [
-            [Button => "Zoom ~in", -command => sub { zoom_in($c) }],
-            [Button => "Zoom ~out", -command => sub { zoom_out($c) }],
-        ]],
-        [Cascade => "~Help", -menuitems => [
-            [Button => "~About", -command => sub {
-                 $mw->messageBox(
-                     -icon => "info",
-                     -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
-                     -type => "ok"
-                 );
-             }],
-            [Button => "tkgvizmakefile Doc", -command => sub {
-                 require Tk::Pod;
-                 $mw->Pod(-file => $0);
-             }],
-            [Button => "GraphViz::Makefile Doc", -command => sub {
-                 require Tk::Pod;
-                 $mw->Pod(-file => "GraphViz::Makefile");
-             }],
-        ]],
-    ]));
-    $mw->bind('<Key-q>' => [$mw, 'destroy']);
-    $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe", -background => 'white');
+    my $c = $mw->Scrolled("GraphViz", -scrollbars => "osoe", -background => 'white');
     $c->createBindings;
     $c->bind('node', '<Button-1>', sub {
         my @tags = $c->gettags('current');
@@ -141,13 +112,39 @@ sub tkcanvas_output {
         printf "Clicked node: '%s' => %s\n", $tags{node}, $tags{label};
     });
     $c->itemconfigure('edge', -activefill => 'green');
-    $c->pack(-fill=>"both", -expand=>1);
+    $c->pack(-fill=>"both", -expand=>1, -side => 'top');
+    my $buttonFrame = $mw->Frame->pack(-side => 'bottom');
+    cmdButton($buttonFrame, Open => 0, [
+        \&choose_new_file, $mw, $prefix, $reversed, $gm_args
+    ], 'left');
+    cmdButton($buttonFrame, Quit => 0, [$mw, 'destroy'], 'right');
+    cmdButton($buttonFrame, 'Zoom in' => 0, [\&zoom_in, $c], 'left');
+    cmdButton($buttonFrame, 'Zoom out X' => 9, [\&zoom_out, $c], 'left');
+    cmdButton($buttonFrame, 'About' => 0, [
+         $mw, qw(messageBox -icon info -type ok),
+         -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
+    ], 'left');
+    cmdButton($buttonFrame, "tkgvizmakefile Doc" => 15, [ \&tkDoc, $0 ], 'left');
+    cmdButton($buttonFrame, "GraphViz::Makefile Doc" => 10, [ \&tkDoc, "GraphViz::Makefile" ], 'left');
     $mw->Advertise(Graph => $c);
     draw_graph($mw, $graphviz);
     my @c = $c->coords("$prefix$rule");
     $c->idletasks;
     $c->center_view($c[0],$c[1]);
     &Tk::MainLoop;
+}
+
+sub tkDoc {
+    my ($mw, $file) = @_;
+    require Tk::Pod;
+    $mw->Pod(-file => $file);
+}
+
+sub cmdButton {
+    my ($frame, $label, $underline_index, $cmd, $pack) = @_;
+    my $key = lc substr $label, $underline_index, 1;
+    $frame->MainWindow->bind("<Key-$key>" => $cmd);
+    $frame->Button(-command => $cmd, -text => $label, -underline => $underline_index)->pack(-side => $pack);
 }
 
 sub draw_graph {
@@ -157,12 +154,12 @@ sub draw_graph {
 }
 
 sub zoom_in {
-    my $c = shift;
+    my ($mw, $c) = @_;
     zoom_any($c, 1.5);
 }
 
 sub zoom_out {
-    my $c = shift;
+    my ($mw, $c) = @_;
     zoom_any($c, 1/1.5);
 }
 
