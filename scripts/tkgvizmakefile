@@ -143,8 +143,9 @@ sub tkDoc {
 sub cmdButton {
     my ($frame, $label, $underline_index, $cmd, $pack) = @_;
     my $key = lc substr $label, $underline_index, 1;
-    $frame->MainWindow->bind("<Key-$key>" => $cmd);
-    $frame->Button(-command => $cmd, -text => $label, -underline => $underline_index)->pack(-side => $pack);
+    my $mw = $frame->MainWindow;
+    $mw->bind("<Key-$key>" => $cmd);
+    $frame->Button(-command => [ $cmd->[0], $mw, @$cmd[1..$#$cmd] ], -text => $label, -underline => $underline_index)->pack(-side => $pack);
 }
 
 sub draw_graph {
