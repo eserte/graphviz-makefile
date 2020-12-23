@@ -50,7 +50,7 @@ WriteMakefile(
     prereqs => {
       runtime => {
         recommends => {
-          'Tk::GraphViz' => '1.06',
+          'Tk::GraphViz' => '1.08', # scrollTo
         },
       },
     },

@@ -15,43 +15,6 @@ use strict;
 use warnings;
 our $VERSION = '1.09';
 
-{
-    package Tk::Canvas;
-
-    # from Tk::CanvasUtil
-    sub center_view {
-        my ($c, $x, $y, %args) = @_;
-        my @xview = $c->xview;
-        my @yview = $c->yview;
-        my $xwidth = $xview[1]-$xview[0];
-        my $ywidth = $yview[1]-$yview[0];
-        my @scrollregion = ($Tk::VERSION == 800.017
-                            ? $c->cget(-scrollregion)
-                            : @{$c->cget(-scrollregion)});
-        my $see_view = $c->{Configure}{-seeview} || 'see_view';
-        if (!defined $x || !defined $y) {
-            $c->$see_view(0.5, 0.5, %args);
-        } else {
-            $c->$see_view
-                (
-                 ($x-$scrollregion[0])/($scrollregion[2]-$scrollregion[0])
-                 - $xwidth/2,
-                 ($y-$scrollregion[1])/($scrollregion[3]-$scrollregion[1])
-                 - $ywidth/2,
-                 %args
-                );
-        }
-    }
-
-    sub see_view {
-        my($c, $tox, $toy) = @_;
-        $c->xview('moveto' => $tox);
-        $c->yview('moveto' => $toy);
-    }
-
-}
-
-package main;
 use Getopt::Long;
 
 $ENV{MAKE}="make" if !defined $ENV{MAKE}; # to propagate MAKE to submakefiles
@@ -120,6 +83,7 @@ sub tkcanvas_output {
     cmdButton($buttonFrame, Quit => 0, [$mw, 'destroy'], 'right');
     cmdButton($buttonFrame, 'Zoom in' => 0, [$c, qw(zoom -in 1.5)], 'left');
     cmdButton($buttonFrame, 'Zoom out X' => 9, [$c, qw(zoom -out 1.5)], 'left');
+    cmdButton($buttonFrame, 'Find node' => 0, [\&findNode, $c], 'left');
     cmdButton($buttonFrame, 'About' => 0, [
          $mw, qw(messageBox -icon info -type ok),
          -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
@@ -128,10 +92,27 @@ sub tkcanvas_output {
     cmdButton($buttonFrame, "GraphViz::Makefile Doc" => 10, [ \&tkDoc, "GraphViz::Makefile" ], 'left');
     $mw->Advertise(Graph => $c);
     draw_graph($mw, $graphviz);
-    my @c = $c->coords("$prefix$rule");
     $c->idletasks;
-    $c->center_view($c[0],$c[1]);
+    $c->scrollTo("$prefix$rule");
     &Tk::MainLoop;
+}
+
+sub findNode {
+    my ($mw, $gv) = @_;
+    $gv->scrollTo(simpleDialog($mw, 'Rule Name Dialog'));
+}
+
+sub simpleDialog {
+    my ($mw, $title) = @_;
+    require Tk::DialogBox;
+    require Tk::Entry;
+    my $dialog = $mw->DialogBox(-title => $title, -default_button => 'OK', -buttons => [qw/OK Cancel/]);
+    my $entry = $dialog->add('Entry')->pack;
+    $dialog->configure(-focus => $entry);
+    my $ans = $dialog->Show;
+    my $text = $entry->get;
+    $dialog->destroy;
+    $ans ne 'OK' ? undef : $text;
 }
 
 sub tkDoc {
