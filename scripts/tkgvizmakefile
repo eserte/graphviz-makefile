@@ -118,8 +118,8 @@ sub tkcanvas_output {
         \&choose_new_file, $mw, $prefix, $reversed, $gm_args
     ], 'left');
     cmdButton($buttonFrame, Quit => 0, [$mw, 'destroy'], 'right');
-    cmdButton($buttonFrame, 'Zoom in' => 0, [\&zoom_in, $c], 'left');
-    cmdButton($buttonFrame, 'Zoom out X' => 9, [\&zoom_out, $c], 'left');
+    cmdButton($buttonFrame, 'Zoom in' => 0, [$c, qw(zoom -in 1.5)], 'left');
+    cmdButton($buttonFrame, 'Zoom out X' => 9, [$c, qw(zoom -out 1.5)], 'left');
     cmdButton($buttonFrame, 'About' => 0, [
          $mw, qw(messageBox -icon info -type ok),
          -message => "tkgvizmakefile\n(c)2002,2003 by Slaven Rezic",
@@ -145,49 +145,15 @@ sub cmdButton {
     my $key = lc substr $label, $underline_index, 1;
     my $mw = $frame->MainWindow;
     $mw->bind("<Key-$key>" => $cmd);
-    $frame->Button(-command => [ $cmd->[0], $mw, @$cmd[1..$#$cmd] ], -text => $label, -underline => $underline_index)->pack(-side => $pack);
+    my @button_cmd = @$cmd;
+    splice @button_cmd, 1, 0, $mw if ref($cmd->[0]) eq 'CODE';
+    $frame->Button(-command => \@button_cmd, -text => $label, -underline => $underline_index)->pack(-side => $pack);
 }
 
 sub draw_graph {
     my ($w, $graphviz) = @_;
     my $c = $w->Subwidget("Graph");
     $c->show($graphviz);
-}
-
-sub zoom_in {
-    my ($mw, $c) = @_;
-    zoom_any($c, 1.5);
-}
-
-sub zoom_out {
-    my ($mw, $c) = @_;
-    zoom_any($c, 1/1.5);
-}
-
-sub zoom_any {
-    my ($c, $scalefactor) = @_;
-    $c->scale("all", 0, 0, $scalefactor, $scalefactor);
-    my @scrollregion = @{ $c->cget(-scrollregion) };
-    foreach (@scrollregion) { $_ *= $scalefactor }
-    $c->configure(-scrollregion => \@scrollregion);
-    my $canvas_font = $c->{OrigFont};
-    if (!$canvas_font) {
-        require Tk::Font;
-        my $text_item = ($c->find(withtag => "rule"))[0];
-        if (defined $text_item) {
-            $canvas_font = $c->{OrigFont}
-                = $c->fontCreate("rulefont",
-                                 $c->fontActual($c->itemcget($text_item, "-font")));
-            $c->{WantFontSize} = $c->fontActual("rulefont", "-size");
-            $c->itemconfigure("rule", -font => "rulefont");
-        }
-    }
-    my $curr_size = $c->{WantFontSize};
-    my $new_size = $curr_size * $scalefactor;
-    $c->{WantFontSize} = $new_size;
-    if ($new_size > 0 && $new_size < 6) { $new_size = 6 }
-    if ($new_size < 0 && $new_size > -6) { $new_size = -6 }
-    $c->fontConfigure("rulefont", -size => $new_size);
 }
 
 sub choose_new_file {
