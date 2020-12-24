@@ -1,3 +1,4 @@
+1.20 2020-12-24
 - use Tk::MatchEntry to autocomplete script target-finding
 
 1.19 2020-12-23
