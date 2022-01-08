@@ -58,7 +58,6 @@
 #!end included /usr/local/lib/perl5/5.14/ExtUtils/MANIFEST.SKIP
 
 
-^\.travis\.yml$
 ^GraphViz-Makefile-.*\.tar\.gz$
 \.swp$
 ^\.github/
