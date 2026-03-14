@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        perl-version: ['5.8', '5.14', '5.20']
+        perl-version: ['5.8.9-buster', '5.14.4-buster', '5.20.3-buster', '5.42.1-trixie']
         include:
           - perl-version: '5.30'
             os: ubuntu-latest
@@ -21,7 +21,18 @@ jobs:
             coverage: true
     container: perl:${{ matrix.perl-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
+      - name: apt hacks
+        run: |
+          set -e
+          CODENAME=$(perl -nle '/^VERSION_CODENAME="?([^"]+)/ and $codename=$1; /^VERSION="\d+ \((.*)\)/ and $maybe_codename=$1; END { print $codename || $maybe_codename }' /etc/os-release)
+          case "$CODENAME" in
+            wheezy|jessie|stretch|buster)
+              echo "APT::Get::AllowUnauthenticated 1;" > /etc/apt/apt.conf.d/02allow-unsigned
+              echo "deb [check-valid-until=no] http://archive.debian.org/debian $CODENAME main"                   >  /etc/apt/sources.list
+              echo "deb [check-valid-until=no] http://archive.debian.org/debian-security/ $CODENAME/updates main" >> /etc/apt/sources.list
+             ;;
+          esac
       - name: Install Graphviz, Perl and dependencies
         run: |
           apt-get -y update && apt-get -y install graphviz
@@ -52,7 +63,7 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - uses: ts-graphviz/setup-graphviz@v1
       - uses: shogo82148/actions-setup-perl@v1
         with:
