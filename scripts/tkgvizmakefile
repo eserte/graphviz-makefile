@@ -24,15 +24,20 @@ my $outputtype = "tkcanvas";
 my $outputfile;
 my $prefix = "";
 my $reversed = 0;
+my $chdir = undef;
 if (!GetOptions("f|file=s" => \$file,
                 "T=s" => \$outputtype,
                 "o=s" => \$outputfile,
+                "C=s" => \$chdir,
                 "v!"  => \$GraphViz::Makefile::V,
                 "prefix=s" => \$prefix,
                 "reversed!" => \$reversed,
                )) {
     require Pod::Usage;
     Pod::Usage::pod2usage(1);
+}
+if (defined $chdir) {
+  chdir $chdir or die "$0: chdir($chdir): $!\n";
 }
 my $rule = shift || "all";
 my $gm_args = {};
@@ -159,7 +164,7 @@ tkgvizmakefile - create Tk graphs from Makefiles
 
 =head1 SYNOPSIS
 
-    tkgvizmakefile [-f makefile] [-T output] [-o outputfile]
+    tkgvizmakefile [-f makefile] [-T output] [-o outputfile] [-C newdir]
                    [-reversed] [-prefix prefix] [rule]
 
 =head1 DESCRIPTION
@@ -184,6 +189,10 @@ to a Canvas widget.
 =item -o F<outputfile>
 
 Write the output to the named file. Ignored for the C<tkcanvas> type.
+
+=item -C F<newdir>
+
+Change to the named directory.
 
 =item -reversed
 
