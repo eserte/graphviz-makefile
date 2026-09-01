@@ -65,7 +65,7 @@ sub new {
     bless $self, $pkg;
 }
 
-sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(global => {combine_node_and_port => 0, directed => 1}) }
+sub GraphViz { shift->{GraphViz} ||= GraphViz2->new(%GRAPHVIZ_GRAPH_ARGS) }
 sub Make     { shift->{Make} }
 
 sub generate {
